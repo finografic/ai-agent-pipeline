@@ -13,6 +13,7 @@ import { pc } from './utils/picocolors';
 import { renderTemplate } from './utils/template.utils';
 
 import { extractAcceptanceCriteria, renderWorkerBrief } from './brief';
+import { claimIssue } from './claim';
 import { findRoutingRule, loadConfig, parseIssueLabels } from './config';
 import { createGithubClient } from './github';
 import { runR0Gate } from './reviewers/r0-gate';
@@ -270,20 +271,13 @@ async function invokeWorkerAndPush(
 async function runIssue(issueNumber: number): Promise<void> {
   const { config, github } = await loadContext();
 
+  const claim = await claimIssue({ github, issueNumber, wipLimit: config.limits.wip });
+  if (!claim.claimed) {
+    console.log(pc.yellow(`${claim.reason} — doing nothing.`));
+    return;
+  }
+
   const issue = await github.getIssue(issueNumber);
-  if (!issue.labels.includes('agent:ready')) {
-    console.log(pc.yellow(`Issue #${issueNumber} does not carry agent:ready — doing nothing.`));
-    return;
-  }
-
-  const inProgressCount = await github.countOpenIssuesWithLabel('agent:in-progress');
-  if (inProgressCount >= config.limits.wip) {
-    console.log(pc.yellow(`WIP limit reached (${inProgressCount}/${config.limits.wip}) — doing nothing.`));
-    return;
-  }
-
-  await github.swapIssueLabel({ issueNumber, remove: 'agent:ready', add: 'agent:in-progress' });
-
   const routing = findRoutingRule(config, parseIssueLabels(issue.labels));
   const worktree = await createOrResumeWorktree({
     repoPath: config.repo.path,
@@ -624,7 +618,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error: unknown) => {
-  console.error(pc.red(error instanceof Error ? (error.stack ?? error.message) : String(error)));
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((error: unknown) => {
+    console.error(pc.red(error instanceof Error ? (error.stack ?? error.message) : String(error)));
+    process.exit(1);
+  });
+}
