@@ -109,15 +109,15 @@ asks a model for an opinion until CI is green.
 
 Five agents plus you. Two do work, three judge it, and only one of the judges is expensive.
 
-| # | Agent | Job | Runs on | Cost |
-|---|-------|-----|---------|------|
-| **G** | Groomer | Turn a `ROADMAP.md` entry into a well-formed issue draft | glm-5.2 via OpenCode | pennies |
-| **W1** | Implementer (primary) | Write the code for feature/refactor issues | Claude Code — Sonnet 5, Opus on `risk:high` | the real spend |
-| **W2** | Implementer (chore) | Docs, renames, TODO→DONE graduation, dep bumps, mechanical sweeps | Codex **or** OpenCode glm-5.2 | cheap |
-| **R0** | Gatekeeper | Deterministic policy + CI status. No LLM. | pure script | free |
-| **R1** | Contract reviewer | Does this diff satisfy the issue's acceptance criteria? Diff-only context. | gpt-oss:20b locally, glm-5.2 if the diff is large | free → pennies |
-| **R2** | Adversarial reviewer | Hunt for LLAAB-specific landmines. Only runs if R0 and R1 pass. | Claude Code or Codex — **must differ from W1's provider** | moderate |
-| **H** | You | Approve issues into the queue. Merge PRs. | — | scarce |
+| #      | Agent                 | Job                                                                        | Runs on                                                   | Cost           |
+| ------ | --------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------- | -------------- |
+| **G**  | Groomer               | Turn a `ROADMAP.md` entry into a well-formed issue draft                   | glm-5.2 via OpenCode                                      | pennies        |
+| **W1** | Implementer (primary) | Write the code for feature/refactor issues                                 | Claude Code — Sonnet 5, Opus on `risk:high`               | the real spend |
+| **W2** | Implementer (chore)   | Docs, renames, TODO→DONE graduation, dep bumps, mechanical sweeps          | Codex **or** OpenCode glm-5.2                             | cheap          |
+| **R0** | Gatekeeper            | Deterministic policy + CI status. No LLM.                                  | pure script                                               | free           |
+| **R1** | Contract reviewer     | Does this diff satisfy the issue's acceptance criteria? Diff-only context. | gpt-oss:20b locally, glm-5.2 if the diff is large         | free → pennies |
+| **R2** | Adversarial reviewer  | Hunt for LLAAB-specific landmines. Only runs if R0 and R1 pass.            | Claude Code or Codex — **must differ from W1's provider** | moderate       |
+| **H**  | You                   | Approve issues into the queue. Merge PRs.                                  | —                                                         | scarce         |
 
 Two rules about the reviewers that are easy to skip and expensive to skip:
 
@@ -208,7 +208,7 @@ stateDiagram-v2
     needs_human --> ready: you fix the spec
 ```
 
-Note what only *you* can do: move `drafted → ready`, and move `approved → merged`. Everything
+Note what only _you_ can do: move `drafted → ready`, and move `approved → merged`. Everything
 between those two is automated. That's the whole trust boundary, and it's a good one to start with —
 the groomer can't invent work for itself, and no agent can land code.
 
@@ -218,23 +218,23 @@ the groomer can't invent work for itself, and no agent can land code.
 
 Two labels decide everything: **class** (what kind of work) and **risk** (how bad if it's wrong).
 
-| class | risk | Worker | Model / effort | Max rounds | Reviewers |
-|-------|------|--------|----------------|-----------:|-----------|
-| `chore` | low | W2 | glm-5.2, light | 1 | R0 only |
-| `docs` | low | W2 | glm-5.2, light | 1 | R0 + R1 |
-| `test` | low | W2 | Codex, standard | 2 | R0 + R1 |
-| `refactor` | med | W1 | Sonnet 5, standard | 2 | R0 + R1 + R2 |
-| `feature` | med | W1 | Sonnet 5, standard | 2 | R0 + R1 + R2 |
-| `refactor`/`feature` | high | W1 | Opus 4.8, deep | 2 | R0 + R1 + R2 + mandatory human read of the plan **before** implementation |
-| anything touching `packages/llm` public API | high | W1 | Opus 4.8, deep | 1 | full ladder + you |
+| class                                       | risk | Worker | Model / effort     | Max rounds | Reviewers                                                                 |
+| ------------------------------------------- | ---- | ------ | ------------------ | ---------: | ------------------------------------------------------------------------- |
+| `chore`                                     | low  | W2     | glm-5.2, light     |          1 | R0 only                                                                   |
+| `docs`                                      | low  | W2     | glm-5.2, light     |          1 | R0 + R1                                                                   |
+| `test`                                      | low  | W2     | Codex, standard    |          2 | R0 + R1                                                                   |
+| `refactor`                                  | med  | W1     | Sonnet 5, standard |          2 | R0 + R1 + R2                                                              |
+| `feature`                                   | med  | W1     | Sonnet 5, standard |          2 | R0 + R1 + R2                                                              |
+| `refactor`/`feature`                        | high | W1     | Opus 4.8, deep     |          2 | R0 + R1 + R2 + mandatory human read of the plan **before** implementation |
+| anything touching `packages/llm` public API | high | W1     | Opus 4.8, deep     |          1 | full ladder + you                                                         |
 
 **Effort profiles** (the "effort level" you asked about):
 
-| Profile | Extended thinking | Plan-before-code | Context budget | Use for |
-|---------|-------------------|------------------|----------------|---------|
-| `light` | off | no | issue + named files only | chores, docs |
-| `standard` | on, moderate | yes, in the PR body | issue + touched package | most work |
-| `deep` | on, high | yes, **posted to the issue for your approval first** | issue + package + dependents | high risk, API changes |
+| Profile    | Extended thinking | Plan-before-code                                     | Context budget               | Use for                |
+| ---------- | ----------------- | ---------------------------------------------------- | ---------------------------- | ---------------------- |
+| `light`    | off               | no                                                   | issue + named files only     | chores, docs           |
+| `standard` | on, moderate      | yes, in the PR body                                  | issue + touched package      | most work              |
+| `deep`     | on, high          | yes, **posted to the issue for your approval first** | issue + package + dependents | high risk, API changes |
 
 The `deep` profile's plan-first gate is the single highest-leverage cost control in the table. A
 wrong plan costs you one cheap plan-generation call to discover. A wrong implementation costs the
@@ -247,17 +247,17 @@ whole session plus review plus your time.
 Being honest about this matters, because "use local models to save money" quietly becomes "produce
 garbage for free" if applied to the wrong stages.
 
-| Task | Local viable? | Which | Why |
-|------|---------------|-------|-----|
-| Classify an issue → class + risk labels | ✅ yes | `gemma4:e4b-it-qat` (JSON mode) | Small closed-set classification. Ideal local work. |
-| Lint an issue against the template | ✅ yes — or no LLM at all | script first, `gemma4:e4b` fallback | Mostly a regex job |
-| Summarise a diff for the PR body | ✅ yes | `gpt-oss:20b` | Summarisation degrades gracefully |
-| R1 contract review of a small diff | ✅ yes | `gpt-oss:20b` (has function/tool support) | Checklist-shaped, diff-only, 131K context is plenty |
-| Draft a conventional-commit message | ✅ yes | `gemma4:e4b-it-qat` | Trivial |
-| Triage CI failure → is this flaky or real? | ⚠️ marginal | `gemma4:26b-a4b-it-qat` | Try it; measure |
-| R2 adversarial review | ❌ no | — | Needs real judgement about consequences |
-| Implementation | ❌ no | — | This is where quality compounds |
-| Anything touching the `@llaab/llm` contract | ❌ no | — | Highest blast radius in the repo |
+| Task                                        | Local viable?             | Which                                     | Why                                                 |
+| ------------------------------------------- | ------------------------- | ----------------------------------------- | --------------------------------------------------- |
+| Classify an issue → class + risk labels     | ✅ yes                    | `gemma4:e4b-it-qat` (JSON mode)           | Small closed-set classification. Ideal local work.  |
+| Lint an issue against the template          | ✅ yes — or no LLM at all | script first, `gemma4:e4b` fallback       | Mostly a regex job                                  |
+| Summarise a diff for the PR body            | ✅ yes                    | `gpt-oss:20b`                             | Summarisation degrades gracefully                   |
+| R1 contract review of a small diff          | ✅ yes                    | `gpt-oss:20b` (has function/tool support) | Checklist-shaped, diff-only, 131K context is plenty |
+| Draft a conventional-commit message         | ✅ yes                    | `gemma4:e4b-it-qat`                       | Trivial                                             |
+| Triage CI failure → is this flaky or real?  | ⚠️ marginal               | `gemma4:26b-a4b-it-qat`                   | Try it; measure                                     |
+| R2 adversarial review                       | ❌ no                     | —                                         | Needs real judgement about consequences             |
+| Implementation                              | ❌ no                     | —                                         | This is where quality compounds                     |
+| Anything touching the `@llaab/llm` contract | ❌ no                     | —                                         | Highest blast radius in the repo                    |
 
 Your local fleet is well-suited to this: everything has JSON mode, `gpt-oss:20b` is the one with
 function-calling, and the 131K–262K context windows mean diff-scoped review never needs truncation.
@@ -317,14 +317,14 @@ weekend:
 
 Rough order of magnitude per merged PR, assuming diff-scoped review and prompt caching:
 
-| Stage | Typical input | Typical output | Model | Order of cost |
-|-------|--------------:|---------------:|-------|--------------|
-| Groom | ~5–15K | ~1K | glm-5.2 | fractions of a cent |
-| Implement (chore) | ~20–60K | ~3–8K | glm-5.2 / Codex | cents |
-| Implement (feature) | ~150–500K | ~10–30K | Sonnet 5 | the dominant line item |
-| R0 gate | — | — | script | zero |
-| R1 contract | ~8–25K | ~1K | local | zero |
-| R2 adversarial | ~15–40K | ~2–4K | Sonnet/Codex | cents |
+| Stage               | Typical input | Typical output | Model           | Order of cost          |
+| ------------------- | ------------: | -------------: | --------------- | ---------------------- |
+| Groom               |        ~5–15K |            ~1K | glm-5.2         | fractions of a cent    |
+| Implement (chore)   |       ~20–60K |          ~3–8K | glm-5.2 / Codex | cents                  |
+| Implement (feature) |     ~150–500K |        ~10–30K | Sonnet 5        | the dominant line item |
+| R0 gate             |             — |              — | script          | zero                   |
+| R1 contract         |        ~8–25K |            ~1K | local           | zero                   |
+| R2 adversarial      |       ~15–40K |          ~2–4K | Sonnet/Codex    | cents                  |
 
 These are estimates and you should treat them as such. Which is exactly why the build brief makes
 **per-stage token and cost logging a Phase 0 requirement, not a nice-to-have.** After ten merged
@@ -389,14 +389,14 @@ the numbers Phase 0 gives you.
 Not hypotheticals — these are the ones that will actually happen:
 
 - **Issue quality collapse.** The groomer writes plausible issues with vague acceptance criteria;
-  workers produce plausible PRs that don't do anything. *Mitigation:* the template lint is strict
+  workers produce plausible PRs that don't do anything. _Mitigation:_ the template lint is strict
   about testable acceptance criteria, and you keep the `agent:ready` gate.
-- **Reviewer sycophancy.** R1/R2 approve everything. *Mitigation:* provider diversity, diff-only
+- **Reviewer sycophancy.** R1/R2 approve everything. _Mitigation:_ provider diversity, diff-only
   context, and periodically feed a known-bad PR through to check the gate still bites.
 - **Scope creep in PRs.** Worker "helpfully" fixes adjacent things; diffs balloon; you stop
-  reviewing carefully. *Mitigation:* R0 rejects diffs over a line-count threshold outright.
-- **Stale branch pileup.** Four open agent PRs, all conflicting. *Mitigation:* WIP limit of 1.
-- **Silent budget burn.** A worker loops on a failing test for an hour. *Mitigation:* hard per-issue
+  reviewing carefully. _Mitigation:_ R0 rejects diffs over a line-count threshold outright.
+- **Stale branch pileup.** Four open agent PRs, all conflicting. _Mitigation:_ WIP limit of 1.
+- **Silent budget burn.** A worker loops on a failing test for an hour. _Mitigation:_ hard per-issue
   cap and a max-rounds counter.
 - **The pipeline becomes the project.** You spend three weekends on the orchestrator instead of on
-  LLAAB. *Mitigation:* Phase 0 should be a few hundred lines. If it isn't, cut scope.
+  LLAAB. _Mitigation:_ Phase 0 should be a few hundred lines. If it isn't, cut scope.
