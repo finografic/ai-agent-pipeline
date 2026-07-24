@@ -17,31 +17,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 24
-          registry-url: https://npm.pkg.github.com
-          scope: "@finografic"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 10
+          bun-version: "1.2"
 
       - name: Install deps
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Lint
-        run: pnpm lint:ci
+        run: bun run lint:ci
 
       - name: Lint markdown
-        run: pnpm lint:md
+        run: bun run lint:md
 
       - name: Type check
-        run: pnpm typecheck
+        run: bun run typecheck
 
       - name: Format check
-        run: pnpm format:check
+        run: bun run format:check
+
+      - name: Test
+        run: bun test

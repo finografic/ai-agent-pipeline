@@ -11,9 +11,6 @@
   "bugs": {
     "url": "https://github.com/finografic/ai-agent-pipeline/issues"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "author": {
     "name": "Justin Rankin",
     "email": "justin.blair.rankin@gmail.com"
@@ -22,29 +19,19 @@
   "keywords": [
     "finografic",
     "ai-agent-pipeline",
-    "genx:type:library",
-    "library"
+    "genx:type:cli",
+    "cli"
   ],
-  "main": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
-  "module": "./dist/index.mjs",
-  "files": [
-    "dist"
-  ],
-  "exports": {
-    ".": "./dist/index.mjs",
-    "./package.json": "./package.json"
+  "bin": {
+    "pipeline": "./src/cli.ts"
   },
   "scripts": {
-    "---------- DEV_AND_BUILD": "---------------------------------------------",
-    "dev": "tsdown --watch",
-    "link": "pnpm build && pnpm link --global",
-    "unlink": "pnpm unlink --global",
-    "build": "tsdown",
+    "---------- DEV_AND_LINK": "---------------------------------------------",
+    "link": "bun link",
+    "unlink": "bun unlink",
     "·········· TESTING": "···················································",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage",
     "·········· LINTING": "···················································",
     "lint": "oxlint -c oxlint.config.ts",
     "lint:fix": "oxlint -c oxlint.config.ts --fix",
@@ -54,42 +41,35 @@
     "·········· FORMATTING": "················································",
     "format:check": "oxfmt --check",
     "format:fix": "oxfmt",
-    "·········· PUBLISH:GITHUB": "············································",
-    "release:github:patch": "pnpm run release:check && pnpm version patch && git push --follow-tags",
-    "release:github:minor": "pnpm run release:check && pnpm version minor && git push --follow-tags",
-    "release:github:major": "pnpm run release:check && pnpm version major && git push --follow-tags",
-    "release:check": "pnpm format:check && pnpm lint:fix && pnpm typecheck && pnpm test:run",
-    "release:publish": "pnpm publish --registry https://npm.pkg.github.com",
-    "·········· REGISTRIES": "················································",
-    "view:registry:github": "pnpm view @finografic/ai-agent-pipeline --registry=https://npm.pkg.github.com",
     "·········· PACKAGES": "··················································",
-    "update:deps:all": "pnpm update --latest",
-    "update:oxc-config": "pnpm update @finografic/oxc-config --latest && pnpm update oxfmt --latest && pnpm update oxlint --latest",
+    "update:deps:all": "bun update --latest",
+    "update:oxc-config": "bun update @finografic/oxc-config --latest && bun update oxfmt --latest && bun update oxlint --latest",
     "·········· UTILS": "·····················································",
     "tsc:debug": "tsc --pretty --project tsconfig.json",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "prepack": "pnpm build",
     "prepare": "husky"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.2.0",
     "@commitlint/config-conventional": "^20.2.0",
     "@finografic/md-lint": "^0.16.6",
     "@finografic/oxc-config": "^2.0.0",
+    "@types/bun": "^1.2.0",
     "@types/node": "^24.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "oxfmt": "^0.43.0",
     "oxlint": "^1.60.0",
     "oxlint-tsgolint": "^0.21.1",
-    "tsdown": "^0.20.3",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "typescript": "^5.9.3"
   },
   "engines": {
-    "node": ">=24.16.0"
+    "bun": ">=1.2.0"
   },
-  "packageManager": "pnpm@11.14.0",
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
       "oxfmt --no-error-on-unmatched-pattern",
