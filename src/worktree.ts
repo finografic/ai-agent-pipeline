@@ -38,6 +38,24 @@ export function slugify(title: string): string {
   return slug.slice(0, 40).replace(/-+$/, '') || 'issue';
 }
 
+export interface ResolveWorktreeParams {
+  worktreeRoot: string;
+  issueNumber: number;
+  issueTitle: string;
+}
+
+/** Computes an issue's deterministic worktree path + branch name without touching git. */
+export function resolveWorktree({ worktreeRoot, issueNumber, issueTitle }: ResolveWorktreeParams): {
+  path: string;
+  branch: string;
+} {
+  const slug = slugify(issueTitle);
+  return {
+    path: join(expandHome(worktreeRoot), `${issueNumber}-${slug}`),
+    branch: `agent/${issueNumber}-${slug}`,
+  };
+}
+
 /**
  * Creates a fresh worktree from the target repo's default branch, or resumes an
  * existing one for the same issue. Never operates on `repoPath` itself — always
@@ -50,16 +68,13 @@ export async function createOrResumeWorktree({
   issueNumber,
   issueTitle,
 }: CreateOrResumeWorktreeParams): Promise<WorktreeInfo> {
-  const root = expandHome(worktreeRoot);
-  const slug = slugify(issueTitle);
-  const branch = `agent/${issueNumber}-${slug}`;
-  const worktreePath = join(root, `${issueNumber}-${slug}`);
+  const { path: worktreePath, branch } = resolveWorktree({ worktreeRoot, issueNumber, issueTitle });
 
   if (existsSync(worktreePath)) {
     return { path: worktreePath, branch, isResume: true };
   }
 
-  await mkdir(root, { recursive: true });
+  await mkdir(expandHome(worktreeRoot), { recursive: true });
   await $`git -C ${repoPath} fetch origin ${defaultBranch}`.quiet();
   await $`git -C ${repoPath} worktree add -b ${branch} ${worktreePath} origin/${defaultBranch}`.quiet();
 

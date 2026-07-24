@@ -63,6 +63,7 @@ export interface GithubClient {
   swapPrLabel(params: { prNumber: number; remove: string; add: string }): Promise<void>;
   postPrComment(params: { prNumber: number; body: string }): Promise<void>;
   markPrReadyForReview(prNumber: number): Promise<void>;
+  updatePrBody(params: { prNumber: number; body: string }): Promise<void>;
 }
 
 const ISSUE_FIELDS = 'number,title,body,labels,state';
@@ -167,7 +168,10 @@ export function createGithubClient({ repoSlug }: CreateGithubClientParams): Gith
       for (const label of labels) {
         const args = ['label', 'create', label.name, '--force'];
         if (label.color !== undefined) args.push('--color', label.color);
-        if (label.description !== undefined) args.push('--description', label.description);
+        // Bun's $ array-arg interpolation mishandles an empty string element (misaligns
+        // the remaining args, "too many arguments") — never push a blank description.
+        if (label.description !== undefined && label.description !== '')
+          {args.push('--description', label.description);}
         await $`gh ${args} -R ${repoSlug}`.quiet();
       }
     },
@@ -257,6 +261,12 @@ export function createGithubClient({ repoSlug }: CreateGithubClientParams): Gith
 
     async markPrReadyForReview(prNumber) {
       await $`gh pr ready ${String(prNumber)} -R ${repoSlug}`.quiet();
+    },
+
+    async updatePrBody({ prNumber, body }) {
+      await withTempFile(body, (bodyPath) =>
+        $`gh pr edit ${String(prNumber)} --body-file ${bodyPath} -R ${repoSlug}`.quiet(),
+      );
     },
   };
 }
