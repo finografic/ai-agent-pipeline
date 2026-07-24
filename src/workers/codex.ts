@@ -5,10 +5,10 @@ import { runWorkerProcess } from './types';
 /**
  * Adapter for the OpenAI Codex CLI, run non-interactively via `codex exec`.
  *
- * NOTE: `codex exec` does not have a verified structured-output flag in this build —
- * the CLI's own tooling is sandboxed out of reach here (see BUILD_LEDGER). Token/cost
- * fields are left `null` rather than guessed; revisit once `codex exec --help` can be
- * checked against the installed version.
+ * NOTE: `codex exec` does not have a verified structured-output flag in this build — the CLI's
+ * own tooling was sandboxed out of reach here (see the Open Questions in `.agents/handoff.md`
+ * and `docs/todo/NEXT_STEPS.md`). Token/cost fields are left `null` rather than guessed; revisit
+ * once `codex exec --help` can be checked against the installed version.
  */
 export function createCodexWorker(spawn?: SpawnFn): Worker {
   return {

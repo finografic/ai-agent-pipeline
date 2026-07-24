@@ -13,7 +13,7 @@ A standalone Bun/TypeScript CLI that takes a human-approved GitHub issue on a ta
 opens a draft PR — then gates that PR with a free deterministic check (R0) and a free local-model
 contract review (R1) before it needs human attention. Design rationale lives in
 `docs/AGENT_PIPELINE_PROPOSAL.md`; the build brief that scoped Phase 0/1 is
-`docs/todo/TODO_AGENT_PIPELINE_SETUP.md`.
+`docs/todo/DONE_AGENT_PIPELINE_SETUP.md`.
 
 ## Architecture
 
@@ -38,8 +38,8 @@ covered by 36 `bun:test` tests (config validation, all six R0 checks, R1 JSON pa
 the malformed/retry/escalation paths via a mocked Ollama client, worktree lifecycle against a
 disposable fixture repo, WIP-limit enforcement). `pipeline doctor` has been run live against the
 real `finografic/llaab` repo — all 9 checks pass, and the 12 pipeline labels now exist there for
-real. `run`/`gate` have not yet been exercised end-to-end against a real issue. Full detail,
-decisions, and deferred items: `docs/BUILD_LEDGER.md`.
+real. `run`/`gate` have not yet been exercised end-to-end against a real issue — see
+`docs/todo/NEXT_STEPS.md` for the concrete steps to get there.
 
 Explicitly not built (per brief, out of scope for now): Groomer, R2 adversarial review, Hermes
 integration, scheduled execution, concurrent issues (WIP > 1), a web UI, merge automation.
@@ -55,6 +55,11 @@ integration, scheduled execution, concurrent issues (WIP > 1), a web UI, merge a
 - Gate round tracking lives in a hidden PR-body marker (`<!-- agent:round=N -->`), not a label.
 - R1 has no remote-model fallback (the brief's config schema has none) — an oversized diff fails
   closed to `agent:needs-human` rather than guessing at an unconfigured client.
+- `gate` always runs R0 then R1 unconditionally — it does not consult a routing rule's
+  `reviewers` list to decide whether to run R1. That field (including `'r2'`) is forward-looking
+  config for Phase 3; only `run` reads `routing.worker`/`routing.effort`.
+- Test-integrity (R0's sixth check — deleted/weakened test files) is a non-blocking flag, not a
+  hard failure, per the brief's explicit carve-out. Checks 1–5 stop the gate at first failure.
 
 ## Open Questions
 
@@ -62,5 +67,7 @@ integration, scheduled execution, concurrent issues (WIP > 1), a web UI, merge a
   conventions, not verified interactively — the CLIs are sandboxed out of reach in this build
   environment. Verify against real `--help` output before the first real `pipeline run`.
 - Line count for Phase 0+1 (~1,976 in `src/` + config, excluding tests) is well over the brief's
-  800–1,200 guideline — see `docs/BUILD_LEDGER.md` for why, and whether a simplification pass is
-  worth doing before Phase 2.
+  800–1,200 guideline (`src/cli.ts` at 626 lines and `src/github.ts` at 273 are most of it —
+  genuine breadth plus this project's one-field-per-line `oxfmt` style, not padding). No
+  mechanical trim was done at the end to avoid regressing tested, live-verified code; worth a
+  critical read before Phase 2.

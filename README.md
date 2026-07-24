@@ -6,7 +6,8 @@ A small Bun/TypeScript orchestrator that takes a human-approved GitHub issue, ha
 coding agent CLI in an isolated git worktree, and opens a draft PR — then gates that PR with a
 free deterministic check (R0) and a free local-model contract review (R1) before it's worth your
 attention. See [`docs/AGENT_PIPELINE_PROPOSAL.md`](./docs/AGENT_PIPELINE_PROPOSAL.md) for the full
-design rationale and [`docs/BUILD_LEDGER.md`](./docs/BUILD_LEDGER.md) for build status.
+design rationale and [`.agents/handoff.md`](./.agents/handoff.md) for current architecture,
+status, and key decisions.
 
 This is a standalone tool. It runs against a target repo (currently
 [finografic/llaab](https://github.com/finografic/llaab)) from the outside — worktrees, subprocess
@@ -15,13 +16,13 @@ repo it operates on.
 
 ## Status
 
-Phase 0 and Phase 1 are code-complete: typecheck/lint/format clean, 36 tests passing, and
-`pipeline doctor` has been run live against the real `finografic/llaab` repo (all 9 checks pass,
-its 12 GitHub labels exist there for real). **A real end-to-end `run`/`gate` cycle against an
-actual issue hasn't happened yet** — see [`docs/todo/NEXT_STEPS.md`](./docs/todo/NEXT_STEPS.md)
-for the concrete steps to get there (including which worker CLI flags still need verifying, and
-which LLAAB issues are safe to try first) and [`docs/BUILD_LEDGER.md`](./docs/BUILD_LEDGER.md) for
-full build history and decisions.
+Phase 0 and Phase 1 ([`docs/todo/DONE_AGENT_PIPELINE_SETUP.md`](./docs/todo/DONE_AGENT_PIPELINE_SETUP.md))
+are code-complete: typecheck/lint/format clean, 36 tests passing, and `pipeline doctor` has been
+run live against the real `finografic/llaab` repo (all 9 checks pass, its 12 GitHub labels exist
+there for real). **A real end-to-end `run`/`gate` cycle against an actual issue hasn't happened
+yet** — see [`docs/todo/NEXT_STEPS.md`](./docs/todo/NEXT_STEPS.md) for the concrete steps to get
+there (including which worker CLI flags still need verifying, and which LLAAB issues are safe to
+try first).
 
 ## Install
 

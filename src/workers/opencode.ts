@@ -6,10 +6,10 @@ import { runWorkerProcess } from './types';
  * Adapter for the OpenCode CLI, run non-interactively via `opencode run`. Also used
  * for cheap review passes elsewhere in the pipeline (see proposal section 3, W2/R1).
  *
- * NOTE: `opencode run` does not have a verified structured-output flag in this build —
- * the CLI's own tooling is sandboxed out of reach here (see BUILD_LEDGER). Token/cost
- * fields are left `null` rather than guessed; revisit once `opencode --help` can be
- * checked against the installed version.
+ * NOTE: `opencode run` does not have a verified structured-output flag in this build — the CLI's
+ * own tooling was sandboxed out of reach here (see the Open Questions in `.agents/handoff.md`
+ * and `docs/todo/NEXT_STEPS.md`). Token/cost fields are left `null` rather than guessed; revisit
+ * once `opencode --help` can be checked against the installed version.
  */
 export function createOpencodeWorker(spawn?: SpawnFn): Worker {
   return {

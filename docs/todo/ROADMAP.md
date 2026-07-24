@@ -22,7 +22,7 @@ When an item is done, move it to the Done section at the bottom with a completio
 ## Next
 
 - [ ] Verify `claude-code.ts`/`codex.ts`/`opencode.ts` worker adapter CLI flags against real
-      `--help` output before the first real `pipeline run` (see `docs/BUILD_LEDGER.md`).
+      `--help` output before the first real `pipeline run` (see `docs/todo/NEXT_STEPS.md`).
 - [ ] Label a real, small LLAAB issue `agent:ready` and run `pipeline run <issue>` end-to-end.
 - [ ] Collect a telemetry sample from 3+ real runs and tune the placeholder budget caps in
       `pipeline.config.ts`.

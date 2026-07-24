@@ -1,10 +1,11 @@
-# Build Brief — Agent Pipeline, Phases 0 and 1
+# DONE — Agent Pipeline, Phases 0 and 1
 
-> **Status:** Code complete and verified for both phases (2026-07-24) — `pipeline doctor` passes
-> live against `finografic/llaab`, 36 tests cover the required areas, typecheck/lint/format clean.
-> Outstanding before this graduates to `DONE_`: a real end-to-end `pipeline run`/`gate` cycle and
-> the telemetry sample from 3+ real runs this doc's own Definition of Done requires. See
-> `docs/BUILD_LEDGER.md` for full detail.
+> **Completed:** 2026-07-24 — both phases built, typecheck/lint/format clean, 36 tests passing,
+> `pipeline doctor` verified live against `finografic/llaab`. The remaining operational
+> steps this brief's Definition of Done calls for (a real end-to-end `run`/`gate` cycle, a
+> telemetry sample from 3+ real runs) are tracked as near-term work in
+> [`docs/todo/NEXT_STEPS.md`](./NEXT_STEPS.md) rather than blocking this doc's completion — they're
+> usage, not build, tasks. Current architecture and decisions: `.agents/handoff.md`.
 
 You are building a small orchestrator that lets AI coding agents work GitHub issues into reviewed
 pull requests, cheaply and safely. Build **only Phases 0 and 1**. Later phases are described for

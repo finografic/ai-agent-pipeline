@@ -1,7 +1,7 @@
 # Next Steps — Agent Pipeline
 
 > Near-term, action-oriented follow-ups for the Phase 0/1 build. References
-> `docs/todo/ROADMAP.md` and `docs/BUILD_LEDGER.md` — see those for milestone-level status and
+> `docs/todo/ROADMAP.md` and `.agents/handoff.md` — see those for milestone-level status and
 > the decisions/deferrals behind this list. This doc is for the concrete "what do I actually do
 > next" detail; keep it current as items get done rather than letting it go stale.
 
@@ -26,8 +26,8 @@ the CLIs (`claude`, `codex`, `opencode`) were sandboxed out of reach in the buil
       routing table sends `class:chore`/`class:docs`, `risk:low` work here, which is meant to be
       the cheapest, highest-volume path.
 - [ ] Once confirmed, update the adapter(s) and the `NOTE:` doc comments in each file (they
-      currently say "not verified — see BUILD_LEDGER"), and remove the corresponding line from
-      `docs/BUILD_LEDGER.md`'s Deferred section.
+      currently say "not verified — see the Open Questions in `.agents/handoff.md`"), and drop
+      the corresponding bullet from that file once it's no longer true.
 
 ## 2. First real end-to-end `pipeline run` — pick a safe LLAAB issue
 
@@ -137,9 +137,9 @@ tested against a real worker CLI's actual subprocess tree.
       `gh pr checks --json name,bucket` output.
 - [ ] Telemetry files (`telemetry/*.jsonl`) have no rotation/retention — fine at low volume, worth
       a note if this runs for months.
-- [ ] The line-count overage flagged in `docs/BUILD_LEDGER.md` (~1,976 vs. the brief's
-      800–1,200 guideline) hasn't had a simplification pass. Worth revisiting once real usage
-      shows which parts of `src/cli.ts` actually earn their complexity vs. which don't.
+- [ ] The line-count overage flagged in `.agents/handoff.md` (~1,976 vs. the brief's 800–1,200
+      guideline) hasn't had a simplification pass. Worth revisiting once real usage shows which
+      parts of `src/cli.ts` actually earn their complexity vs. which don't.
 - [ ] Consider a `--dry-run` flag for `run`/`gate` (render the brief / print the gate result
       without labeling or invoking anything) to make future testing safer — not in the brief, but
       would have made steps 2–4 above easier to iterate on.

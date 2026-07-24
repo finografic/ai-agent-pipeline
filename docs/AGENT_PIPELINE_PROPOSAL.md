@@ -368,19 +368,18 @@ the numbers Phase 0 gives you.
 
 ---
 
-## 12. Decisions I need from you
+## 12. Decisions made (resolved 2026-07-24, during the Phase 0/1 build)
 
-1. **GitHub confirmed?** If LLAAB is anywhere else, the substrate changes (though the shape doesn't).
-2. **W2's runtime** — Codex or OpenCode glm-5.2 for chore work? Codex gives you provider diversity
-   for free, which R2 wants anyway. Slight lean: Codex.
-3. **Does the groomer open issues directly, or write drafts to a file for you to open?** Direct is
-   more useful; file-based is safer for the first fortnight. Lean: direct, but the `agent:ready`
-   approval gate makes either safe.
-4. **Anthropic key in LLAAB** — your `/llm` page shows `claude-sonnet-4-6` as "provider API key not
-   configured". Unrelated to this pipeline (which calls Claude Code as a subprocess, not the API),
-   but worth deciding whether the app itself should have that route.
-5. **Where does the pipeline repo live** — new `finografic/agent-pipeline`, or `tools/` inside
-   something existing? Strong recommendation: its own repo.
+1. **GitHub confirmed.** LLAAB lives at `finografic/llaab`, local checkout `/Users/justin/LLAAB`.
+2. **W2's runtime — decided differently than the lean.** `chore`/`docs` route to **OpenCode**
+   (not Codex); `test` routes to **Codex**. `pipeline.config.ts`'s routing table is the source of
+   truth if this changes again.
+3. **Groomer direct-vs-file** — still open. Phase 2 (the groomer) wasn't built; revisit when it is.
+4. **Anthropic key in LLAAB** — unrelated to this pipeline (still calls Claude Code as a
+   subprocess, not the API) and was left untouched.
+5. **Where the pipeline repo lives — decided.** Its own standalone repo, exactly as recommended:
+   `finografic/ai-agent-pipeline` (this repo). Runs against LLAAB from the outside — worktrees,
+   `gh`, subprocess CLI calls — the same way `gh` or `yt-dlp` would; never imported as a library.
 
 ---
 
