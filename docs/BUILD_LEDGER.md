@@ -10,6 +10,18 @@ against the real target repo (`finografic/llaab`); `run`/`gate`/`status`/`abort`
 and typecheck/lint/test clean, but `run`/`gate` have not yet been exercised against a real GitHub
 issue end-to-end (no LLAAB issue has been labeled `agent:ready` yet — see Deferred).
 
+**Line budget: over target, flagged honestly rather than hidden.** `src/**/*.ts` + `pipeline.config.ts`
+is ~1,976 lines against the brief's 800–1,200 guideline (tests, at 536 lines, are correctly
+excluded from that count). `src/cli.ts` (626 lines) and `src/github.ts` (273 lines) are the bulk of
+the overage. Reasons, not excuses: `cli.ts` wires all five commands plus `gate`'s round-retry logic
+and `doctor`'s checks — genuine breadth, not layering; `github.ts` is a fully-typed wrapper over
+eleven distinct `gh` operations, which is inherently enumerable. The project's own `oxfmt` style
+also spreads multi-field object literals one-field-per-line, which inflates raw line counts
+relative to a denser style without changing what the code does. I did not do a mechanical
+line-cutting pass at the end — the code is tested and live-verified, and cutting for a line-count
+target this late risks regressions for a soft metric. Worth a critical read on the next pass rather
+than treated as settled.
+
 ## Resume here
 
 Nothing is mid-flight. To pick this up next:

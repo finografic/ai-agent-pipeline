@@ -8,20 +8,59 @@
 
 ## Project
 
-_Describe the project in one or two sentences._
+A standalone Bun/TypeScript CLI that takes a human-approved GitHub issue on a target repo
+(currently `finografic/llaab`), hands it to an AI coding agent CLI in an isolated git worktree, and
+opens a draft PR — then gates that PR with a free deterministic check (R0) and a free local-model
+contract review (R1) before it needs human attention. Design rationale lives in
+`docs/AGENT_PIPELINE_PROPOSAL.md`; the build brief that scoped Phase 0/1 is
+`docs/todo/TODO_AGENT_PIPELINE_SETUP.md`.
 
 ## Architecture
 
-_Describe the current architecture, package roles, and boundaries._
+Full Bun — own `package.json`/`bun.lock`, `bun test`, `Bun.$` for every subprocess/git/gh call, no
+build step (the CLI runs `.ts` directly via a `#!/usr/bin/env bun` shebang, `bin` in `package.json`
+points straight at `src/cli.ts`). Not a published library — no `main`/`module`/`exports`; installed
+locally via `bun link`. `src/cli.ts` is the orchestration hub for all five commands
+(`doctor|run|gate|status|abort`) and imports: `config.ts` (zod-validated `pipeline.config.ts`),
+`github.ts` (thin `gh` CLI wrapper, everything scoped with an explicit `-R` so it never depends on
+cwd), `worktree.ts` (git worktree create/resume/destroy, always against a repo path passed in —
+never this repo), `claim.ts` (the WIP-limit + `agent:ready` check, extracted so it's unit-testable
+without a real `gh`), `workers/` (a `Worker` interface plus `claude-code`/`codex`/`opencode`
+subprocess adapters sharing one timeout/process-tree-kill/logging runner), `reviewers/` (`r0-gate.ts`
+deterministic, `r1-contract.ts` local-model via `llm/local.ts`'s minimal Ollama client),
+`telemetry.ts` (JSONL per stage, `telemetry/<date>.jsonl`, gitignored), and `brief.ts` +
+`prompts/*.md` (template rendering for the worker brief and R1's prompt).
 
 ## Status
 
-_What exists now and what is in progress._
+Phase 0 and Phase 1 (per the build brief) are both implemented, typecheck/lint/format clean, and
+covered by 36 `bun:test` tests (config validation, all six R0 checks, R1 JSON parsing including
+the malformed/retry/escalation paths via a mocked Ollama client, worktree lifecycle against a
+disposable fixture repo, WIP-limit enforcement). `pipeline doctor` has been run live against the
+real `finografic/llaab` repo — all 9 checks pass, and the 12 pipeline labels now exist there for
+real. `run`/`gate` have not yet been exercised end-to-end against a real issue. Full detail,
+decisions, and deferred items: `docs/BUILD_LEDGER.md`.
+
+Explicitly not built (per brief, out of scope for now): Groomer, R2 adversarial review, Hermes
+integration, scheduled execution, concurrent issues (WIP > 1), a web UI, merge automation.
 
 ## Key Decisions
 
-_Stable conventions and choices that matter to the next agent._
+- Runtime pivoted mid-build from the brief's original "Bun + Vitest" to full Bun (`bun test`, own
+  lockfile, `engines.bun >= 1.2`) — user-directed.
+- No publish/library shape — this repo is shelled out to like `gh` or `yt-dlp`, never imported.
+  `release.yml` deliberately untouched.
+- No groomer yet, so `class:*`/`risk:*` labels are applied by hand; `pipeline run` fails loud
+  (`RoutingNotFoundError`) rather than guessing a route.
+- Gate round tracking lives in a hidden PR-body marker (`<!-- agent:round=N -->`), not a label.
+- R1 has no remote-model fallback (the brief's config schema has none) — an oversized diff fails
+  closed to `agent:needs-human` rather than guessing at an unconfigured client.
 
 ## Open Questions
 
-_Unresolved questions that affect upcoming work._
+- Worker adapter CLI flags (`claude-code.ts`, `codex.ts`, `opencode.ts`) are based on documented
+  conventions, not verified interactively — the CLIs are sandboxed out of reach in this build
+  environment. Verify against real `--help` output before the first real `pipeline run`.
+- Line count for Phase 0+1 (~1,976 in `src/` + config, excluding tests) is well over the brief's
+  800–1,200 guideline — see `docs/BUILD_LEDGER.md` for why, and whether a simplification pass is
+  worth doing before Phase 2.
