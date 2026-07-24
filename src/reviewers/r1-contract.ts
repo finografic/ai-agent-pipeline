@@ -27,8 +27,8 @@ export interface R1Params {
   reviewModel: string;
   /** Full diff text — used only to decide whether it fits the local model's comfortable window. */
   diff: string;
-  systemPrompt: string;
-  userPrompt: string;
+  /** Fully rendered prompts/r1-contract.md — acceptance criteria + checklist + diff, nothing else. */
+  prompt: string;
   maxLocalDiffChars?: number;
 }
 
@@ -46,8 +46,8 @@ function tryParseVerdict(content: string): R1Verdict | undefined {
 
 /**
  * Contract reviewer: does the diff satisfy the issue's acceptance criteria? Context is
- * exactly what the caller renders into `systemPrompt`/`userPrompt` — no repo dump, no
- * worker reasoning. Retries once on malformed JSON, then fails closed to needs-human.
+ * exactly what the caller renders into `prompt` — no repo dump, no worker reasoning.
+ * Retries once on malformed JSON, then fails closed to needs-human.
  *
  * There is no remote-model fallback wired up in Phase 0/1 (the config schema has no
  * "remote" section — see brief section 2) — an oversized diff also fails closed to
@@ -68,8 +68,7 @@ export async function runR1Review(params: R1Params): Promise<R1Outcome> {
     const { content, promptTokens, completionTokens } = await ollamaChat({
       baseUrl: params.baseUrl,
       model: params.reviewModel,
-      systemPrompt: params.systemPrompt,
-      userPrompt: params.userPrompt,
+      userPrompt: params.prompt,
       json: true,
     });
 
