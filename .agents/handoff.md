@@ -38,8 +38,12 @@ covered by 36 `bun:test` tests (config validation, all six R0 checks, R1 JSON pa
 the malformed/retry/escalation paths via a mocked Ollama client, worktree lifecycle against a
 disposable fixture repo, WIP-limit enforcement). `pipeline doctor` has been run live against the
 real `finografic/llaab` repo — all 9 checks pass, and the 12 pipeline labels now exist there for
-real. `run`/`gate` have not yet been exercised end-to-end against a real issue — see
-`docs/todo/NEXT_STEPS.md` for the concrete steps to get there.
+real. The CLI is now linked (`bun link`, 2026-07-25) — `~/.bun/bin/pipeline` resolves globally, and
+`pipeline doctor` re-confirmed 9/9 checks post-link. `run`/`gate` have not yet been exercised
+end-to-end against a real issue — blocked, not just un-started: LLAAB currently has zero open
+issues and zero PRs (confirmed 2026-07-25). See `docs/todo/NEXT_STEPS.md` for the concrete steps
+once an issue exists, and `docs/todo/TODO_LLAAB_INTEGRATION.md` for the LLAAB-side plan to seed
+one and use the linked CLI from there.
 
 Explicitly not built (per brief, out of scope for now): Groomer, R2 adversarial review, Hermes
 integration, scheduled execution, concurrent issues (WIP > 1), a web UI, merge automation.
@@ -64,8 +68,13 @@ integration, scheduled execution, concurrent issues (WIP > 1), a web UI, merge a
 ## Open Questions
 
 - Worker adapter CLI flags (`claude-code.ts`, `codex.ts`, `opencode.ts`) are based on documented
-  conventions, not verified interactively — the CLIs are sandboxed out of reach in this build
-  environment. Verify against real `--help` output before the first real `pipeline run`.
+  conventions, not verified interactively — the CLIs resolve on `PATH` (`pipeline doctor` finds
+  all three) but remain uninvokable from this sandboxed session (shell-allowlist restriction),
+  same as during the original build. Verify against real `--help` output before the first real
+  `pipeline run`.
+- LLAAB's CI check name (`requiredChecks: ['lint']`) was confirmed indirectly (2026-07-25) by
+  reading `.github/workflows/ci.yml` rather than a live `gh pr checks` call — no LLAAB PR exists
+  yet. Low-risk but not 100% certain; re-check the first time a real PR's checks are visible.
 - Line count for Phase 0+1 (~1,976 in `src/` + config, excluding tests) is well over the brief's
   800–1,200 guideline (`src/cli.ts` at 626 lines and `src/github.ts` at 273 are most of it —
   genuine breadth plus this project's one-field-per-line `oxfmt` style, not padding). No

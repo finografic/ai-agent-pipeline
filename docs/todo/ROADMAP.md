@@ -21,8 +21,16 @@ When an item is done, move it to the Done section at the bottom with a completio
 
 ## Next
 
+- [x] Link the CLI locally — `bun link` run 2026-07-25; `~/.bun/bin/pipeline` resolves globally;
+      `pipeline doctor` re-verified 9/9 against real `finografic/llaab` post-link.
+- [x] Confirm LLAAB's CI check name — `lint`, confirmed via `.github/workflows/ci.yml` inspection
+      2026-07-25 (no live PR existed to check directly; re-verify once one does).
 - [ ] Verify `claude-code.ts`/`codex.ts`/`opencode.ts` worker adapter CLI flags against real
-      `--help` output before the first real `pipeline run` (see `docs/todo/NEXT_STEPS.md`).
+      `--help` output before the first real `pipeline run` (see `docs/todo/NEXT_STEPS.md`) — still
+      blocked in this session's sandbox, same as during the original build.
+- [ ] **Blocker**: LLAAB has zero open issues and zero PRs (checked 2026-07-25) — a qualifying
+      issue must exist before `pipeline run` can be exercised end-to-end. See
+      `docs/todo/TODO_LLAAB_INTEGRATION.md`.
 - [ ] Label a real, small LLAAB issue `agent:ready` and run `pipeline run <issue>` end-to-end.
 - [ ] Collect a telemetry sample from 3+ real runs and tune the placeholder budget caps in
       `pipeline.config.ts`.

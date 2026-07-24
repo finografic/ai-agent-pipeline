@@ -31,6 +31,12 @@ the CLIs (`claude`, `codex`, `opencode`) were sandboxed out of reach in the buil
 
 ## 2. First real end-to-end `pipeline run` — pick a safe LLAAB issue
 
+> **Blocker as of 2026-07-25**: `gh issue list --repo finografic/llaab --state all` and
+> `gh pr list --repo finografic/llaab --state all` both return zero results. There is currently
+> nothing to label `agent:ready` — a qualifying issue has to be opened in LLAAB before this
+> section can proceed. See `docs/todo/TODO_LLAAB_INTEGRATION.md` for the LLAAB-side plan to seed
+> one.
+
 Do **not** start with anything risky. Good first candidates, in order of preference:
 
 - **`class:chore`, `risk:low`** — a dependency bump, a rename, a dead-code removal, a
@@ -38,9 +44,9 @@ Do **not** start with anything risky. Good first candidates, in order of prefere
   only — cheapest possible first test, and R1 doesn't even run so you're only exercising `run` +
   R0.
 - **`class:docs`, `risk:low`** — fixing a typo or a broken link in LLAAB's own docs, or updating
-  a stale section of LLAAB's `AGENTS.md`. Routes to `opencode`, still light, but now `reviewers:
-[r0, r1]` — exercises R1 too, on a diff simple enough that a wrong R1 verdict is easy to spot by
-  eye.
+  a stale section of LLAAB's `AGENTS.md`. Routes to `opencode`, still light, but now runs both
+  `r0` and `r1` reviewers — exercises R1 too, on a diff simple enough that a wrong R1 verdict is
+  easy to spot by eye.
 - **`class:test`, `risk:low`** — add a missing unit test for an existing, already-tested-adjacent
   utility. Routes to `codex`, `effort: standard`. Good second test once `codex.ts`'s flags are
   confirmed (step 1).
@@ -130,11 +136,12 @@ tested against a real worker CLI's actual subprocess tree.
 
 ## 8. Open implementation follow-ups (not required by the brief, worth a decision)
 
-- [ ] Confirm the actual check name `gh pr checks` reports for LLAAB's CI — the
-      `requiredChecks: ['lint']` in `pipeline.config.ts` assumes the job name is exactly `lint`;
-      if GitHub reports it differently (e.g. prefixed with the workflow name), R0's check-polling
-      will treat it as permanently missing → pending forever. Verify against a real LLAAB PR's
-      `gh pr checks --json name,bucket` output.
+- [x] Confirm the actual check name `gh pr checks` reports for LLAAB's CI — **confirmed with a
+      caveat (2026-07-25)**: no LLAAB PR exists yet to check live, so instead read
+      `.github/workflows/ci.yml` directly (via `gh api repos/finografic/llaab/contents/...`) — one
+      job, keyed `lint`, no `name:` override, no matrix, which confirms `requiredChecks: ['lint']`
+      is correct. Re-verify against a live PR's `gh pr checks` output the first time one exists,
+      since job-id-as-check-name isn't 100% guaranteed across GitHub's Checks API quirks.
 - [ ] Telemetry files (`telemetry/*.jsonl`) have no rotation/retention — fine at low volume, worth
       a note if this runs for months.
 - [ ] The line-count overage flagged in `.agents/handoff.md` (~1,976 vs. the brief's 800–1,200

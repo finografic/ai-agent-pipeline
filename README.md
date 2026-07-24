@@ -19,10 +19,13 @@ repo it operates on.
 Phase 0 and Phase 1 ([`docs/todo/DONE_AGENT_PIPELINE_SETUP.md`](./docs/todo/DONE_AGENT_PIPELINE_SETUP.md))
 are code-complete: typecheck/lint/format clean, 36 tests passing, and `pipeline doctor` has been
 run live against the real `finografic/llaab` repo (all 9 checks pass, its 12 GitHub labels exist
-there for real). **A real end-to-end `run`/`gate` cycle against an actual issue hasn't happened
-yet** — see [`docs/todo/NEXT_STEPS.md`](./docs/todo/NEXT_STEPS.md) for the concrete steps to get
-there (including which worker CLI flags still need verifying, and which LLAAB issues are safe to
-try first).
+there for real). The CLI is linked (`bun link`) and confirmed working globally — `pipeline doctor`
+re-passes 9/9 post-link. **A real end-to-end `run`/`gate` cycle against an actual issue hasn't
+happened yet — and currently can't, since LLAAB has zero open issues and zero PRs.** See
+[`docs/todo/NEXT_STEPS.md`](./docs/todo/NEXT_STEPS.md) for the concrete steps once an issue exists
+(including which worker CLI flags still need verifying), and
+[`docs/todo/TODO_LLAAB_INTEGRATION.md`](./docs/todo/TODO_LLAAB_INTEGRATION.md) for the plan to use
+this linked CLI from the LLAAB side.
 
 ## Install
 
