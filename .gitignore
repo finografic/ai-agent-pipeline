@@ -44,6 +44,9 @@ pids
 *.seed
 *.pid.lock
 
+# Pipeline telemetry (JSONL run logs, not source)
+telemetry/*.jsonl
+
 # Cache
 .cache/
 .llm-cache/
