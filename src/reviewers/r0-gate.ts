@@ -22,6 +22,9 @@ export interface R0Params {
   pr: GithubPr;
   diff: string;
   getPrChecks: () => Promise<GithubCheckRun[]>;
+  /** Test-only overrides — production always uses the real defaults below. */
+  checksMaxAttempts?: number;
+  checksBackoffMs?: number;
 }
 
 const CONVENTIONAL_COMMIT_RE =
@@ -39,11 +42,13 @@ function sleep(ms: number): Promise<void> {
 async function pollRequiredChecks({
   requiredChecks,
   getPrChecks,
-}: Pick<R0Params, 'requiredChecks' | 'getPrChecks'>): Promise<{
+  maxAttempts,
+  backoffMs,
+}: Pick<R0Params, 'requiredChecks' | 'getPrChecks'> & { maxAttempts: number; backoffMs: number }): Promise<{
   status: 'pass' | 'fail' | 'pending';
   violations: R0Violation[];
 }> {
-  for (let attempt = 0; attempt < CHECKS_MAX_ATTEMPTS; attempt++) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const checks = await getPrChecks();
     const relevant = requiredChecks.map((name) => checks.find((check) => check.name === name));
 
@@ -63,14 +68,14 @@ async function pollRequiredChecks({
       }
     }
 
-    if (attempt < CHECKS_MAX_ATTEMPTS - 1) await sleep(CHECKS_BACKOFF_MS * (attempt + 1));
+    if (attempt < maxAttempts - 1) await sleep(backoffMs * (attempt + 1));
   }
   return {
     status: 'pending',
     violations: [
       {
         check: 'requiredChecks',
-        message: `Required checks still pending after ${CHECKS_MAX_ATTEMPTS} bounded polls`,
+        message: `Required checks still pending after ${maxAttempts} bounded polls`,
       },
     ],
   };
@@ -141,9 +146,16 @@ export async function runR0Gate(params: R0Params): Promise<R0Result> {
     pr,
     diff,
     getPrChecks,
+    checksMaxAttempts = CHECKS_MAX_ATTEMPTS,
+    checksBackoffMs = CHECKS_BACKOFF_MS,
   } = params;
 
-  const checksResult = await pollRequiredChecks({ requiredChecks, getPrChecks });
+  const checksResult = await pollRequiredChecks({
+    requiredChecks,
+    getPrChecks,
+    maxAttempts: checksMaxAttempts,
+    backoffMs: checksBackoffMs,
+  });
   if (checksResult.status === 'pending') {
     return { passed: false, pending: true, violations: checksResult.violations, flags: [] };
   }

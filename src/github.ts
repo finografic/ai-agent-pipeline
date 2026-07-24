@@ -170,8 +170,9 @@ export function createGithubClient({ repoSlug }: CreateGithubClientParams): Gith
         if (label.color !== undefined) args.push('--color', label.color);
         // Bun's $ array-arg interpolation mishandles an empty string element (misaligns
         // the remaining args, "too many arguments") — never push a blank description.
-        if (label.description !== undefined && label.description !== '')
-          {args.push('--description', label.description);}
+        if (label.description !== undefined && label.description !== '') {
+          args.push('--description', label.description);
+        }
         await $`gh ${args} -R ${repoSlug}`.quiet();
       }
     },
