@@ -13,6 +13,16 @@ This is a standalone tool. It runs against a target repo (currently
 CLI calls, `gh` — the same way `gh` or `yt-dlp` would. It is never imported as a library by the
 repo it operates on.
 
+## Status
+
+Phase 0 and Phase 1 are code-complete: typecheck/lint/format clean, 36 tests passing, and
+`pipeline doctor` has been run live against the real `finografic/llaab` repo (all 9 checks pass,
+its 12 GitHub labels exist there for real). **A real end-to-end `run`/`gate` cycle against an
+actual issue hasn't happened yet** — see [`docs/todo/NEXT_STEPS.md`](./docs/todo/NEXT_STEPS.md)
+for the concrete steps to get there (including which worker CLI flags still need verifying, and
+which LLAAB issues are safe to try first) and [`docs/BUILD_LEDGER.md`](./docs/BUILD_LEDGER.md) for
+full build history and decisions.
+
 ## Install
 
 ```bash
