@@ -58,15 +58,20 @@ export function renderReviewEvidence(params: RenderReviewEvidenceParams): string
   const prBody = stripAgentMarkers(params.prBody);
   const commitLines = params.commits.flatMap((commit, index) => {
     const body = commit.messageBody.trim();
-    return [`${index + 1}. ${commit.messageHeadline}`, body ? body : '_No commit body provided._'];
+    return [
+      `#### Commit ${index + 1}: ${commit.messageHeadline}`,
+      '',
+      body ? body : '_No commit body provided._',
+      '',
+    ];
   });
 
   return [
-    '### PR body',
+    '### PR Body Evidence',
     '',
     prBody || '_No PR body provided._',
     '',
-    '### Commit messages',
+    '### Commit Message Evidence',
     '',
     ...commitLines,
   ].join('\n');

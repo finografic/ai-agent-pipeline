@@ -60,9 +60,9 @@ describe('renderReviewEvidence', () => {
       ],
     });
 
-    expect(body).toContain('### PR body\n\nCloses #42');
+    expect(body).toContain('### PR Body Evidence\n\nCloses #42');
     expect(body).not.toContain('agent:round');
-    expect(body).toContain('1. docs(todo): graduate plan');
+    expect(body).toContain('#### Commit 1: docs(todo): graduate plan');
     expect(body).toContain('Verified: rg TODO_PLAN returned no docs matches.');
   });
 });
