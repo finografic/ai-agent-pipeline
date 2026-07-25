@@ -1,5 +1,13 @@
 # Task — Use the agent-pipeline CLI from inside LLAAB
 
+> **ACTIVE NOW — 2026-07-26.** This is the current working task: locally integrate and exercise
+> `@finografic/ai-agent-pipeline` against LLAAB from `/Users/justin/LLAAB`.
+>
+> **Progress tracking:** use this file for the durable task contract, and use
+> [`NEXT_STEPS.md`](./NEXT_STEPS.md#0-active-now--llaab-local-integration-pass) for the live
+> checklist. Operational state is visible with `pipeline status` from the agent-pipeline repo or
+> from `/Users/justin/LLAAB`.
+
 This doc is written to be handed to an agent (or read by a human) working **inside the `LLAAB`
 repo** (`/Users/justin/LLAAB`). It assumes zero prior context on `agent-pipeline` beyond this file.
 

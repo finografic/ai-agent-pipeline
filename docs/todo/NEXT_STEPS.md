@@ -7,6 +7,22 @@
 
 ---
 
+## 0. ACTIVE NOW — LLAAB local integration pass
+
+This is the current task as of 2026-07-26. Follow progress here while the integration pass is in
+flight; durable usage rules live in [`TODO_LLAAB_INTEGRATION.md`](./TODO_LLAAB_INTEGRATION.md).
+
+- [ ] Run `pipeline doctor` from `/Users/justin/LLAAB` and record whether all 9 checks pass.
+- [ ] Check `pipeline status` before starting work and confirm the WIP limit leaves room for a
+      new run.
+- [ ] Pick one safe, low-risk LLAAB issue candidate from the current roadmap/docs; prefer docs,
+      chore, or test work that avoids forbidden paths and `packages/llm` public APIs.
+- [ ] Create or update the GitHub issue with `## Acceptance Criteria`.
+- [ ] Apply `class:*`, `risk:low`, and `agent:ready` labels by hand.
+- [ ] Run `pipeline run <issue-number>` and record the worktree, branch, draft PR, and telemetry.
+- [ ] After required checks resolve, run `pipeline gate <pr-number>` and record the R0/R1 verdict.
+- [ ] Leave the final merge decision to Justin; do not merge or push to LLAAB `master`.
+
 ## 1. Verify worker adapter CLI flags (do this first, before any real `run`)
 
 - [x] `claude --help` — confirmed 2026-07-25: `-p`, `--output-format json`,

@@ -33,6 +33,12 @@ deterministic, `r1-contract.ts` local-model via `llm/local.ts`'s minimal Ollama 
 
 ## Status
 
+**Active now (2026-07-26):** LLAAB local integration pass. The current task is to use the linked
+`pipeline` CLI from `/Users/justin/LLAAB`, confirm `pipeline doctor`, select a safe low-risk LLAAB
+issue, and exercise the manual issue → `pipeline run` → `pipeline gate` loop. Track durable task
+rules in `docs/todo/TODO_LLAAB_INTEGRATION.md` and live checklist progress in
+`docs/todo/NEXT_STEPS.md` §0.
+
 Phase 0 and Phase 1 (per the build brief) are both implemented, typecheck/lint/format clean, and
 covered by 37 `bun:test` tests (config validation, all six R0 checks, R1 JSON parsing including
 the malformed/retry/escalation paths via a mocked Ollama client, worktree lifecycle against a

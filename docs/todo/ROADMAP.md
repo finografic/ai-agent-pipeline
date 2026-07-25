@@ -21,6 +21,12 @@ When an item is done, move it to the Done section at the bottom with a completio
 
 ## Next
 
+- [ ] **ACTIVE NOW — LLAAB local integration pass** — use the locally linked `pipeline` CLI from
+      `/Users/justin/LLAAB`, confirm `pipeline doctor`, choose a safe LLAAB issue from the current
+      roadmap/docs, and run the manual issue → `pipeline run` → `pipeline gate` loop while Phase 2
+      groomer automation remains out of scope. Progress lives in
+      [`TODO_LLAAB_INTEGRATION.md`](./TODO_LLAAB_INTEGRATION.md) and
+      [`NEXT_STEPS.md`](./NEXT_STEPS.md#0-active-now--llaab-local-integration-pass).
 - [x] Link the CLI locally — `bun link` run 2026-07-25; `~/.bun/bin/pipeline` resolves globally;
       `pipeline doctor` re-verified 9/9 against real `finografic/llaab` post-link.
 - [x] Confirm LLAAB's CI check name — `lint`, confirmed via `.github/workflows/ci.yml` inspection
@@ -52,7 +58,9 @@ When an item is done, move it to the Done section at the bottom with a completio
 
 ## P0 — Active
 
-_Nothing active right now — pick from P1._
+- [ ] **LLAAB local integration pass** — actively being worked now. Track the live checklist in
+      [`TODO_LLAAB_INTEGRATION.md`](./TODO_LLAAB_INTEGRATION.md) and the short execution queue in
+      [`NEXT_STEPS.md`](./NEXT_STEPS.md#0-active-now--llaab-local-integration-pass).
 
 ---
 
