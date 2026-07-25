@@ -12,11 +12,15 @@
 This is the current task as of 2026-07-26. Follow progress here while the integration pass is in
 flight; durable usage rules live in [`TODO_LLAAB_INTEGRATION.md`](./TODO_LLAAB_INTEGRATION.md).
 
-- [ ] Run `pipeline doctor` from `/Users/justin/LLAAB` and record whether all 9 checks pass.
-- [ ] Check `pipeline status` before starting work and confirm the WIP limit leaves room for a
+- [x] Run `pipeline doctor` from `/Users/justin/LLAAB` and record whether all 9 checks pass.
+      → 2026-07-26: passed, all 9 checks OK.
+- [x] Check `pipeline status` before starting work and confirm the WIP limit leaves room for a
       new run.
-- [ ] Pick one safe, low-risk LLAAB issue candidate from the current roadmap/docs; prefer docs,
+      → 2026-07-26: `WIP: 0/1`.
+- [x] Pick one safe, low-risk LLAAB issue candidate from the current roadmap/docs; prefer docs,
       chore, or test work that avoids forbidden paths and `packages/llm` public APIs.
+      → Selected docs-only graduation of `docs/todo/TODO_PODCAST_INGEST.md`; the roadmap already
+      marks podcast ingest validation complete.
 - [ ] Create or update the GitHub issue with `## Acceptance Criteria`.
 - [ ] Apply `class:*`, `risk:low`, and `agent:ready` labels by hand.
 - [ ] Run `pipeline run <issue-number>` and record the worktree, branch, draft PR, and telemetry.
