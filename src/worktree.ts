@@ -118,6 +118,16 @@ export async function hasNewCommits({ worktreePath, since }: HasNewCommitsParams
   return Number(result.trim()) > 0;
 }
 
+export interface HasDirtyChangesParams {
+  worktreePath: string;
+}
+
+/** True when the worktree has staged, unstaged, or untracked changes. */
+export async function hasDirtyChanges({ worktreePath }: HasDirtyChangesParams): Promise<boolean> {
+  const result = await $`git -C ${worktreePath} status --porcelain`.quiet().text();
+  return result.trim().length > 0;
+}
+
 export interface PushBranchParams {
   worktreePath: string;
   branch: string;

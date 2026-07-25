@@ -32,6 +32,7 @@ import {
   destroyWorktree,
   expandHome,
   getHeadSha,
+  hasDirtyChanges,
   hasNewCommits,
   pushBranch,
   resolveWorktree,
@@ -210,7 +211,7 @@ interface InvokeWorkerAndPushParams {
 
 async function invokeWorkerAndPush(
   params: InvokeWorkerAndPushParams,
-): Promise<'pushed' | 'no-commits' | 'timeout'> {
+): Promise<'pushed' | 'no-commits' | 'dirty-uncommitted' | 'timeout'> {
   const {
     config,
     issueNumber,
@@ -267,7 +268,10 @@ async function invokeWorkerAndPush(
   // retry the branch is already ahead of the default branch from earlier rounds, so that would
   // always look like "made commits" even when this round's worker made no further changes.
   const madeCommits = await hasNewCommits({ worktreePath: worktree.path, since: beforeSha });
-  if (!madeCommits) return 'no-commits';
+  if (!madeCommits) {
+    const madeChanges = await hasDirtyChanges({ worktreePath: worktree.path });
+    return madeChanges ? 'dirty-uncommitted' : 'no-commits';
+  }
 
   await pushBranch({ worktreePath: worktree.path, branch: worktree.branch });
   return 'pushed';
@@ -305,9 +309,14 @@ async function runIssue(issueNumber: number): Promise<void> {
     effortProfile: routing.effort,
   });
 
-  if (outcome === 'timeout' || outcome === 'no-commits') {
+  if (outcome === 'timeout' || outcome === 'no-commits' || outcome === 'dirty-uncommitted') {
     await github.swapIssueLabel({ issueNumber, remove: 'agent:in-progress', add: 'agent:needs-human' });
-    const reason = outcome === 'timeout' ? 'Worker timed out' : 'Worker produced no commits';
+    const reason =
+      outcome === 'timeout'
+        ? 'Worker timed out'
+        : outcome === 'dirty-uncommitted'
+          ? 'Worker left uncommitted changes'
+          : 'Worker produced no commits';
     console.log(
       pc.red(`${reason} — labeled agent:needs-human. Worktree left at ${worktree.path} for inspection.`),
     );
@@ -412,7 +421,11 @@ async function handleGateFailure(params: HandleGateFailureParams): Promise<void>
 
   if (outcome !== 'pushed') {
     await github.swapIssueLabel({ issueNumber, remove: 'agent:in-progress', add: 'agent:needs-human' });
-    console.log(pc.red(`Retry round ${nextRound} produced no new commits — labeled agent:needs-human.`));
+    const reason =
+      outcome === 'dirty-uncommitted'
+        ? `Retry round ${nextRound} left uncommitted changes`
+        : `Retry round ${nextRound} produced no new commits`;
+    console.log(pc.red(`${reason} — labeled agent:needs-human.`));
     return;
   }
   console.log(

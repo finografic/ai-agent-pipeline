@@ -8,6 +8,7 @@ import {
   createOrResumeWorktree,
   destroyWorktree,
   getHeadSha,
+  hasDirtyChanges,
   hasNewCommits,
   pushBranch,
   slugify,
@@ -110,6 +111,24 @@ describe('worktree lifecycle (disposable fixture repo)', () => {
 
     const localBranches = await $`git -C ${repoPath} branch`.quiet().text();
     expect(localBranches).not.toContain(worktree.branch);
+  });
+
+  test('hasDirtyChanges detects uncommitted worker edits', async () => {
+    const worktree = await createOrResumeWorktree({
+      repoPath,
+      worktreeRoot,
+      defaultBranch: 'master',
+      issueNumber: 5,
+      issueTitle: 'Dirty changes',
+    });
+
+    expect(await hasDirtyChanges({ worktreePath: worktree.path })).toBe(false);
+
+    await Bun.write(join(worktree.path, 'dirty-file.txt'), 'dirty');
+
+    expect(await hasDirtyChanges({ worktreePath: worktree.path })).toBe(true);
+
+    await destroyWorktree({ repoPath, worktreePath: worktree.path, branch: worktree.branch });
   });
 
   test('hasNewCommits against a fixed ref falsely stays true across a no-op round — since must be re-captured per round', async () => {
