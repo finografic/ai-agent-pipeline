@@ -4,25 +4,32 @@ Run this from inside the `agent-pipeline` repo. Goal: work through
 `docs/todo/NEXT_STEPS.md` in order, turning "code-complete but unverified" into "actually proven
 against the real target." Do not skip ahead — later steps assume earlier ones are true.
 
-> **Progress (2026-07-25)** — Sections 1–2 attempted; section 3 is blocked, not merely un-started.
+> **Progress — updated 2026-07-25 (second pass, after a real run+gate cycle completed)**
 >
-> - **§1 (worker CLI flags)** — still blocked. `claude`, `codex`, `opencode` resolve on `PATH` (per
->   `pipeline doctor`) but remain uninvokable from this sandboxed session (shell-allowlist
->   restriction, same as during the original build). Adapter `NOTE:` comments left as-is.
-> - **§2 (CI check name)** — resolved, but by a different method than prescribed: `gh pr list
---repo finografic/llaab --state all` returns zero results, so there is no real PR to run
->   `gh pr checks` against yet. Instead read `.github/workflows/ci.yml` directly via the GitHub API
->   — one job, keyed `lint`, no `name:` override, no matrix — which confirms `requiredChecks:
-['lint']` in `pipeline.config.ts` is correct. Treat as confirmed-with-caveat; re-verify against
->   a live PR the first time one exists.
-> - **§3 blocker (new finding, not previously known)** — `gh issue list --repo finografic/llaab
---state all` also returns zero results. LLAAB has no open issues and no PRs at all right now.
->   Step 3's "propose 2–3 candidates" cannot happen until at least one qualifying issue exists in
->   LLAAB — this blocks §3 onward. See `docs/todo/TODO_LLAAB_INTEGRATION.md` for the plan to seed
->   one from the LLAAB side.
+> - **§1 (worker CLI flags)** — done. Once the shell-allowlist restriction was lifted, `--help`
+>   plus public docs confirmed all three adapters, and found/fixed two real bugs (`codex.ts`'s
+>   deprecated `--full-auto`, `opencode.ts`'s missing `--auto`/`--dir`). See
+>   `docs/todo/NEXT_STEPS.md` §1 for full detail. Only nominally open: `claude-code.ts`'s and
+>   `opencode.ts`'s JSON output shapes weren't confirmed by a live invocation (costs real usage).
+> - **§2 (CI check name)** — done, confirmed **live** this time via `gh pr checks` on a real PR
+>   (`finografic/llaab#2`), not just the workflow-file inspection from the first pass.
+> - **§3 (pick the first real test issue)** — done. Proposed two candidates from LLAAB's own
+>   `docs/todo/ROADMAP.md`/`TODO_*.md` state (a chore graduation, a docs link fix); human picked
+>   the chore graduation.
+> - **§4 (first real `run` + `gate` cycle)** — done, fully, including a human merge of the
+>   resulting PR. Found and fixed a third real bug along the way (`hasNewCommits` comparing
+>   against the wrong ref on round retries) and hit a genuine, unrelated LLAAB-side blocker
+>   (pre-existing CI formatting drift on `master`) that got fixed same-day. R1 ran for real for
+>   the first time and gave a legitimate fail verdict; round-exhaustion fired for real. Full trail
+>   in `docs/todo/NEXT_STEPS.md` §2–3.
+> - **§5–6 (disposable-PR safety-net tests)** — **not yet reached.** Round exhaustion did get
+>   validated for real, but via the genuine LLAAB CI blocker above, not via a deliberately-created
+>   disposable PR — so forbidden-path rejection, `abort`+WIP-limit refusal, and the
+>   timeout/process-tree-kill check are all still untested. Still requires the human checkpoint
+>   before opening a disposable test PR.
 > - **Link verified**: `bun link` run successfully in this repo; `~/.bun/bin/pipeline` symlinks to
 >   `src/cli.ts`; `pipeline doctor` re-confirmed 9/9 checks live against `finografic/llaab` after
->   linking. `bun test` (36 pass), `typecheck`, and `lint` all still clean.
+>   linking. `bun test` (37 pass), `typecheck`, `lint`, and `format:check` all still clean.
 
 ---
 

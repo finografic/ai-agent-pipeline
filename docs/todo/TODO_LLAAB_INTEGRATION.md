@@ -68,19 +68,19 @@ Also give the issue a `## Acceptance Criteria` heading in its body. R1 (the loca
 reviewer) checks the diff against that section specifically; without it, R1 falls back to judging
 against the whole issue body, which is a weaker check.
 
-## 3. Known blocker as of 2026-07-25 — seed a real issue
+## 3. Proven end-to-end (2026-07-25) — picking issues going forward
 
-`gh issue list --repo finografic/llaab --state all` and `gh pr list --repo finografic/llaab
---state all` both currently return **zero results**. Nothing has ever gone through this pipeline
-against real LLAAB. Before `pipeline run` can be exercised at all, at least one qualifying issue
-needs to exist.
+The pipeline has now completed a full real cycle against LLAAB: `finografic/llaab#1` (graduate
+`TODO_REGISTRY_PACKAGES.md`) → `pipeline run` → draft PR `#2` → `pipeline gate` (including a
+round-retry cycle and a real, legitimate R1 fail verdict) → merged by a human. Both round-exhaustion
+paths and the label/telemetry lifecycle are confirmed working against the real repo, not just in
+tests. Full trail: `docs/todo/NEXT_STEPS.md` §2–3 in the agent-pipeline repo.
 
-Safe first candidates (do not deviate from this ordering without asking Justin first — this list
-is deliberately conservative because nothing has been proven end-to-end yet):
+Use the same safety ordering for picking the next issue:
 
 1. **Preferred**: `class:chore`, `risk:low` — a dependency bump, a rename, a dead-code removal, or
    a `TODO_*.md` → `DONE_*.md` graduation somewhere in LLAAB. Routes to `opencode`, `effort:light`,
-   R0 only (cheapest possible first test).
+   R0 only (cheapest test).
 2. **Also fine**: `class:docs`, `risk:low` — a typo fix or a stale doc section. Same routing, but
    exercises R1 too.
 
@@ -97,6 +97,12 @@ If you (the agent reading this) are being asked to find or open such an issue in
 candidates with a one-line reason each, and **wait for Justin to pick one** before labeling
 anything `agent:ready`. This mirrors the human-checkpoint rule already in place on the
 agent-pipeline side (`docs/todo/TODO_VERIFY_AGENT_PIPELINE.md` §3 in that repo).
+
+**A real gotcha hit during the first run**: LLAAB's CI (`pull_request` trigger) checks out a PR's
+head branch as committed, not a fresh merge with the current default branch. If `master` gets a
+fix _after_ a PR branch was created, the PR's own check won't reflect it until the PR's branch is
+explicitly updated (`git fetch origin master && git merge origin/master`, or GitHub's "Update
+branch" button) — simply re-running the same check job does not pick it up.
 
 ## 4. Day-to-day command loop, once an issue exists
 
@@ -117,16 +123,24 @@ pipeline abort <issue-number>    # kill switch at any point — tears down the w
 A **human** does the final PR review and merge. No command here does that, and none should be
 made to.
 
-## 5. Guardrails this tool assumes but doesn't enforce in code
+## 5. Guardrails — enforced at the repo level, not in this tool's code
 
-Worth flagging explicitly, not just relying on the code:
-
-- **Token permissions**: the `gh`-authenticated token/PAT this pipeline uses should not have merge
-  rights on LLAAB's `master`. Nothing in the code checks this — it's an out-of-band setting on the
-  token itself. Check it once, on the LLAAB/GitHub side, not something to "fix" here.
+- **Branch protection is live on `master` (2026-07-25)**: a ruleset blocks deletion and force-pushes
+  (except by repo admin), requires the `lint` + both Socket Security checks to pass, and the repo
+  is configured for rebase-merge only (no merge commits, no squashing) via GitHub's Settings →
+  General → Pull Requests. This is the real enforcement of "the automation can't merge/push to
+  master" — the pipeline's own `gh` calls run under the same account as a human, so this repo-level
+  rule, not the code, is what actually stops it. `pushBranch` (`src/worktree.ts`) only ever runs a
+  plain, non-force push to the agent's own feature branch, never `master` — verified in code.
 - **`packages/llm` and the forbidden paths** (§3 above) are enforced by R0 and by
   `prompts/landmines/llaab.md` in the agent-pipeline repo — respect them at labeling time, since
   R0 only catches them after a worker has already spent effort on a doomed diff.
+- **`push.default: matching` on this repo**: a bare `git push` from any LLAAB worktree pushes
+  _every_ local branch with a remote counterpart, not just the current one — worktrees share local
+  branch refs with the main `/Users/justin/LLAAB` checkout, so this can push someone's unrelated,
+  not-yet-intentionally-pushed local `master` commit too. If you ever need to push manually from a
+  worktree (e.g. merging `origin/master` in per the gotcha in §3), always use
+  `git push origin HEAD`, never a bare `git push`.
 
 ## 6. Reporting back
 

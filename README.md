@@ -17,15 +17,23 @@ repo it operates on.
 ## Status
 
 Phase 0 and Phase 1 ([`docs/todo/DONE_AGENT_PIPELINE_SETUP.md`](./docs/todo/DONE_AGENT_PIPELINE_SETUP.md))
-are code-complete: typecheck/lint/format clean, 36 tests passing, and `pipeline doctor` has been
-run live against the real `finografic/llaab` repo (all 9 checks pass, its 12 GitHub labels exist
-there for real). The CLI is linked (`bun link`) and confirmed working globally — `pipeline doctor`
-re-passes 9/9 post-link. **A real end-to-end `run`/`gate` cycle against an actual issue hasn't
-happened yet — and currently can't, since LLAAB has zero open issues and zero PRs.** See
-[`docs/todo/NEXT_STEPS.md`](./docs/todo/NEXT_STEPS.md) for the concrete steps once an issue exists
-(including which worker CLI flags still need verifying), and
-[`docs/todo/TODO_LLAAB_INTEGRATION.md`](./docs/todo/TODO_LLAAB_INTEGRATION.md) for the plan to use
-this linked CLI from the LLAAB side.
+are code-complete: typecheck/lint/format clean, 37 tests passing. The CLI is linked (`bun link`)
+and `pipeline doctor` passes 9/9 live against the real `finografic/llaab` repo.
+
+**A real end-to-end `run` + `gate` cycle has now happened** (2026-07-25) —
+[`finografic/llaab#1`](https://github.com/finografic/llaab/issues/1) →
+[`#2`](https://github.com/finografic/llaab/pull/2), through a round-retry cycle including a real R1
+fail verdict and both round-exhaustion paths, merged by a human. It surfaced and fixed three real
+bugs along the way (bad opencode model string, a missing `--dir` flag that let opencode silently
+operate against the wrong repo, and a round-retry commit-detection bug) — see
+[`docs/todo/NEXT_STEPS.md`](./docs/todo/NEXT_STEPS.md) §2–3 for the full trail. LLAAB's `master`
+now has branch protection (no force-push except by the repo admin, no deletion, required status
+checks, rebase-merge only).
+
+See [`docs/todo/NEXT_STEPS.md`](./docs/todo/NEXT_STEPS.md) for what's still open (budget-cap
+tuning, a few untested failure paths), and
+[`docs/todo/TODO_LLAAB_INTEGRATION.md`](./docs/todo/TODO_LLAAB_INTEGRATION.md) for day-to-day usage
+from the LLAAB side.
 
 ## Install
 
