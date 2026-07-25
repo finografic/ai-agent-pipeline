@@ -30,14 +30,14 @@ const config: PipelineConfig = {
       when: { class: ['chore'], risk: ['low'] },
       worker: 'opencode',
       effort: 'light',
-      model: 'glm-5.2',
+      model: 'opencode-go/glm-5.2',
       reviewers: ['r0'],
     },
     {
       when: { class: ['docs'], risk: ['low'] },
       worker: 'opencode',
       effort: 'light',
-      model: 'glm-5.2',
+      model: 'opencode-go/glm-5.2',
       reviewers: ['r0', 'r1'],
     },
     {

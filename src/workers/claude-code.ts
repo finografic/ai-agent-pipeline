@@ -7,7 +7,15 @@ interface ClaudeJsonResult {
   total_cost_usd?: number;
 }
 
-/** Adapter for the Claude Code CLI, run non-interactively via `-p`/`--output-format json`. */
+/**
+ * Adapter for the Claude Code CLI, run non-interactively via `-p`/`--output-format json`.
+ *
+ * NOTE: flags (`-p`, `--output-format json`, `--dangerously-skip-permissions`, `--model`) all
+ * confirmed real via `claude --help` (2026-07-25). The JSON result shape below (`usage.
+ * input_tokens`/`output_tokens`, `total_cost_usd`) is Anthropic's documented `--print
+ * --output-format json` convention but wasn't confirmed by a live invocation here — that would
+ * spend real API usage. Falls back to `null` tokens on any shape mismatch either way.
+ */
 export function createClaudeCodeWorker(spawn?: SpawnFn): Worker {
   return {
     name: 'claude-code',

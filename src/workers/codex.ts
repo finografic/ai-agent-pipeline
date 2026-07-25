@@ -2,13 +2,21 @@ import type { SpawnFn, Worker, WorkerInvokeParams, WorkerResult } from './types'
 
 import { runWorkerProcess } from './types';
 
+interface CodexTurnCompletedEvent {
+  type: 'turn.completed';
+  usage?: { input_tokens?: number; output_tokens?: number };
+}
+
 /**
  * Adapter for the OpenAI Codex CLI, run non-interactively via `codex exec`.
  *
- * NOTE: `codex exec` does not have a verified structured-output flag in this build — the CLI's
- * own tooling was sandboxed out of reach here (see the Open Questions in `.agents/handoff.md`
- * and `docs/todo/NEXT_STEPS.md`). Token/cost fields are left `null` rather than guessed; revisit
- * once `codex exec --help` can be checked against the installed version.
+ * NOTE (verified 2026-07-25 against codex-cli 0.138.0's --help plus its public docs —
+ * https://learn.chatgpt.com/docs/non-interactive-mode — not by a live invocation, which would
+ * spend real API usage): `--full-auto` still runs but is a deprecated compatibility flag;
+ * `--sandbox workspace-write` is the documented replacement for unattended, approval-free edits
+ * within the worktree. `--json` emits JSONL events including a `turn.completed` event with a real
+ * `usage.input_tokens`/`output_tokens` object — no cost field is documented anywhere in the
+ * stream, so `usdEstimate` stays `null` rather than guessed (brief 0.8).
  */
 export function createCodexWorker(spawn?: SpawnFn): Worker {
   return {
@@ -20,10 +28,10 @@ export function createCodexWorker(spawn?: SpawnFn): Worker {
       timeoutMinutes,
       logPath,
     }: WorkerInvokeParams): Promise<WorkerResult> {
-      const cmd = ['codex', 'exec', '--full-auto', brief];
+      const cmd = ['codex', 'exec', '--json', '--sandbox', 'workspace-write', brief];
       if (model !== undefined) cmd.push('--model', model);
 
-      const { exitCode, timedOut } = await runWorkerProcess({
+      const { exitCode, timedOut, stdout } = await runWorkerProcess({
         cmd,
         cwd: worktreePath,
         timeoutMinutes,
@@ -31,7 +39,22 @@ export function createCodexWorker(spawn?: SpawnFn): Worker {
         spawn,
       });
 
-      return { exitCode, timedOut, inputTokens: null, outputTokens: null, usdEstimate: null };
+      let inputTokens: number | null = null;
+      let outputTokens: number | null = null;
+      for (const line of stdout.split('\n')) {
+        if (line.trim() === '') continue;
+        try {
+          const event = JSON.parse(line) as CodexTurnCompletedEvent;
+          if (event.type === 'turn.completed') {
+            inputTokens = event.usage?.input_tokens ?? null;
+            outputTokens = event.usage?.output_tokens ?? null;
+          }
+        } catch {
+          // Non-JSON or unrelated event line — ignore rather than guess (brief 0.8).
+        }
+      }
+
+      return { exitCode, timedOut, inputTokens, outputTokens, usdEstimate: null };
     },
   };
 }
