@@ -38,6 +38,18 @@ flight; durable usage rules live in [`TODO_LLAAB_INTEGRATION.md`](./TODO_LLAAB_I
 - [x] Leave the final merge decision to Justin; do not merge or push to LLAAB `master`.
       → Justin merged PR `finografic/llaab#4`. Local LLAAB `master` was fast-forwarded afterward.
 
+Additional sample run:
+
+- [x] Ran `pipeline run 5` for `finografic/llaab#5`, "Graduate completed process state audit
+      planning doc"; opened draft PR `finografic/llaab#6` on
+      `agent/5-graduate-completed-process-state-audit-p`.
+- [x] `finografic/llaab#6` checks passed. First gate: R0 pass, R1 fail on missing visible evidence
+      for checklist/link verification; pipeline pushed round 1 commit `8bc08338` adding explicit
+      evidence. Second gate after CI passed again: R1 still failed for the same evidence class,
+      retry round 2 produced no new commits, and issue `finografic/llaab#5` was labeled
+      `agent:needs-human`.
+- [ ] Human decision still needed for `finografic/llaab#6`; do not merge automatically.
+
 ## 1. Verify worker adapter CLI flags (do this first, before any real `run`)
 
 - [x] `claude --help` — confirmed 2026-07-25: `-p`, `--output-format json`,
@@ -239,3 +251,8 @@ tested against a real worker CLI's actual subprocess tree.
 - [ ] Consider a `--dry-run` flag for `run`/`gate` (render the brief / print the gate result
       without labeling or invoking anything) to make future testing safer — not in the brief, but
       would have made steps 2–4 above easier to iterate on.
+- [ ] Improve R1 evidence handling for rename-heavy docs tasks. Two real LLAAB doc-graduation runs
+      (`#4`, `#6`) reached `agent:needs-human` even after correct worker fixes because R1 could not
+      verify checklist completeness or exhaustive inbound-link searches from the PR diff alone.
+      Candidate fix: include worker command/evidence snippets in the PR body or R1 prompt, or add
+      deterministic R0 checks for TODO/DONE graduation evidence before R1.
