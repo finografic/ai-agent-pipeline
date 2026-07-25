@@ -35,9 +35,8 @@ flight; durable usage rules live in [`TODO_LLAAB_INTEGRATION.md`](./TODO_LLAAB_I
       unchecked checklist and inbound-link verification; pipeline pushed round 1 commit
       `5e50bf91`. Second gate after CI passed again: retry round 2 produced no new commits and
       issue `finografic/llaab#3` was labeled `agent:needs-human`.
-- [ ] Leave the final merge decision to Justin; do not merge or push to LLAAB `master`.
-      → Current state: PR `#4` remains open/draft with green checks; issue `#3` needs human
-      decision.
+- [x] Leave the final merge decision to Justin; do not merge or push to LLAAB `master`.
+      → Justin merged PR `finografic/llaab#4`. Local LLAAB `master` was fast-forwarded afterward.
 
 ## 1. Verify worker adapter CLI flags (do this first, before any real `run`)
 
