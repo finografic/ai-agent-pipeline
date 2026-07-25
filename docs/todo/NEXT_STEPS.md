@@ -21,11 +21,23 @@ flight; durable usage rules live in [`TODO_LLAAB_INTEGRATION.md`](./TODO_LLAAB_I
       chore, or test work that avoids forbidden paths and `packages/llm` public APIs.
       → Selected docs-only graduation of `docs/todo/TODO_PODCAST_INGEST.md`; the roadmap already
       marks podcast ingest validation complete.
-- [ ] Create or update the GitHub issue with `## Acceptance Criteria`.
-- [ ] Apply `class:*`, `risk:low`, and `agent:ready` labels by hand.
-- [ ] Run `pipeline run <issue-number>` and record the worktree, branch, draft PR, and telemetry.
-- [ ] After required checks resolve, run `pipeline gate <pr-number>` and record the R0/R1 verdict.
+- [x] Create or update the GitHub issue with `## Acceptance Criteria`.
+      → Created `finografic/llaab#3`, "Graduate completed podcast ingest planning doc".
+- [x] Apply `class:*`, `risk:low`, and `agent:ready` labels by hand.
+      → Applied `class:chore`, `risk:low`, and `agent:ready`.
+- [x] Run `pipeline run <issue-number>` and record the worktree, branch, draft PR, and telemetry.
+      → Ran `pipeline run 3`; opened draft PR `finografic/llaab#4` on
+      `agent/3-graduate-completed-podcast-ingest-planni`, worktree
+      `/Users/justin/.agent-pipeline/worktrees/3-graduate-completed-podcast-ingest-planni`.
+      Telemetry recorded an `invoke` success for issue 3.
+- [x] After required checks resolve, run `pipeline gate <pr-number>` and record the R0/R1 verdict.
+      → `finografic/llaab#4` checks passed. First gate: R0 pass, R1 fail on missing evidence for
+      unchecked checklist and inbound-link verification; pipeline pushed round 1 commit
+      `5e50bf91`. Second gate after CI passed again: retry round 2 produced no new commits and
+      issue `finografic/llaab#3` was labeled `agent:needs-human`.
 - [ ] Leave the final merge decision to Justin; do not merge or push to LLAAB `master`.
+      → Current state: PR `#4` remains open/draft with green checks; issue `#3` needs human
+      decision.
 
 ## 1. Verify worker adapter CLI flags (do this first, before any real `run`)
 
