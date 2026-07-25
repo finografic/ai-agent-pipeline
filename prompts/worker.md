@@ -18,6 +18,9 @@
 - Commit in **Conventional Commits** format. One logical unit of work per commit.
 - Do **not** push to the default branch (`{{defaultBranch}}`). Work happens only on this branch.
 - Do not merge anything, do not open a second PR, do not modify CI or release configuration.
+- Before your final response, run `git status --short`. If you changed files, stage and commit them
+  before responding. A final response with dirty or staged-but-uncommitted changes is a failed run.
+- If you intentionally make no changes, say exactly why no commit is needed.
 
 ## Repo conventions
 

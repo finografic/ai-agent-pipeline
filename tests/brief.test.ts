@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 
-import { extractAcceptanceCriteria, renderDraftPrBody, renderReviewEvidence } from '../src/brief';
+import {
+  extractAcceptanceCriteria,
+  renderDraftPrBody,
+  renderReviewEvidence,
+  renderWorkerBrief,
+} from '../src/brief';
 
 describe('extractAcceptanceCriteria', () => {
   test('extracts a dedicated acceptance criteria section', () => {
@@ -64,5 +69,24 @@ describe('renderReviewEvidence', () => {
     expect(body).not.toContain('agent:round');
     expect(body).toContain('#### Commit 1: docs(todo): graduate plan');
     expect(body).toContain('Verified: rg TODO_PLAN returned no docs matches.');
+  });
+});
+
+describe('renderWorkerBrief', () => {
+  test('requires dirty changes to be committed before final response', async () => {
+    const body = await renderWorkerBrief({
+      issueNumber: 42,
+      issueTitle: 'Document the thing',
+      issueBody: '## Acceptance Criteria\n\n- Update docs',
+      effortProfile: 'small',
+      maxDiffLines: 400,
+      forbiddenPaths: ['vault/'],
+      defaultBranch: 'master',
+      handoffPath: '.agents/handoff.md',
+      instructionsGlob: '.github/instructions/**',
+    });
+
+    expect(body).toContain('Before your final response, run `git status --short`');
+    expect(body).toContain('A final response with dirty or staged-but-uncommitted changes is a failed run.');
   });
 });
