@@ -12,7 +12,12 @@ import type { WorktreeInfo } from './worktree';
 import { pc } from './utils/picocolors';
 import { renderTemplate } from './utils/template.utils';
 
-import { extractAcceptanceCriteria, renderDraftPrBody, renderWorkerBrief } from './brief';
+import {
+  extractAcceptanceCriteria,
+  renderDraftPrBody,
+  renderReviewEvidence,
+  renderWorkerBrief,
+} from './brief';
 import { claimIssue } from './claim';
 import { findRoutingRule, loadConfig, parseIssueLabels } from './config';
 import { createGithubClient } from './github';
@@ -476,6 +481,7 @@ async function gatePr(prNumber: number): Promise<void> {
     acceptanceCriteria: extractAcceptanceCriteria(issue.body),
     checklist,
     diff,
+    reviewEvidence: renderReviewEvidence({ prBody: pr.body, commits: pr.commits }),
   });
 
   const r1StartedAt = new Date().toISOString();

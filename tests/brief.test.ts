@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { extractAcceptanceCriteria, renderDraftPrBody } from '../src/brief';
+import { extractAcceptanceCriteria, renderDraftPrBody, renderReviewEvidence } from '../src/brief';
 
 describe('extractAcceptanceCriteria', () => {
   test('extracts a dedicated acceptance criteria section', () => {
@@ -45,5 +45,24 @@ describe('renderDraftPrBody', () => {
     expect(renderDraftPrBody({ issueNumber: 7, issueBody: '  ', round: 0 })).toContain(
       '_No issue body provided._',
     );
+  });
+});
+
+describe('renderReviewEvidence', () => {
+  test('includes PR body and commit messages while stripping agent round markers', () => {
+    const body = renderReviewEvidence({
+      prBody: 'Closes #42\n\n<!-- agent:round=1 -->',
+      commits: [
+        {
+          messageHeadline: 'docs(todo): graduate plan',
+          messageBody: 'Verified: rg TODO_PLAN returned no docs matches.',
+        },
+      ],
+    });
+
+    expect(body).toContain('### PR body\n\nCloses #42');
+    expect(body).not.toContain('agent:round');
+    expect(body).toContain('1. docs(todo): graduate plan');
+    expect(body).toContain('Verified: rg TODO_PLAN returned no docs matches.');
   });
 });

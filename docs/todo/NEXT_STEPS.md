@@ -252,11 +252,11 @@ tested against a real worker CLI's actual subprocess tree.
 - [ ] Consider a `--dry-run` flag for `run`/`gate` (render the brief / print the gate result
       without labeling or invoking anything) to make future testing safer — not in the brief, but
       would have made steps 2–4 above easier to iterate on.
-- [ ] Improve R1 evidence handling for rename-heavy docs tasks. Two real LLAAB doc-graduation runs
+- [x] Improve R1 evidence handling for rename-heavy docs tasks. Two real LLAAB doc-graduation runs
       (`#4`, `#6`) reached `agent:needs-human` even after correct worker fixes because R1 could not
       verify checklist completeness or exhaustive inbound-link searches from the PR diff alone.
-      Candidate fix: include worker command/evidence snippets in the PR body or R1 prompt, or add
-      deterministic R0 checks for TODO/DONE graduation evidence before R1.
+      Implemented: R1 prompt now includes concrete review evidence from the PR body and commit
+      messages while still treating the diff as source of truth for file changes.
 - [x] Use a richer draft PR body template. Implemented after the first two LLAAB runs: PR title
       continues to mirror the issue title, while PR body now includes `Closes #<issue>`, the full
       copied issue body, and the hidden round marker.

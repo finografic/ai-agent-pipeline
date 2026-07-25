@@ -44,6 +44,34 @@ export function renderDraftPrBody(params: RenderDraftPrBodyParams): string {
   ].join('\n');
 }
 
+export interface RenderReviewEvidenceParams {
+  prBody: string;
+  commits: Array<{ messageHeadline: string; messageBody: string }>;
+}
+
+function stripAgentMarkers(body: string): string {
+  return body.replace(/<!--\s*agent:round=\d+\s*-->/gu, '').trim();
+}
+
+/** Renders non-diff evidence for R1, such as commit bodies that record verification commands. */
+export function renderReviewEvidence(params: RenderReviewEvidenceParams): string {
+  const prBody = stripAgentMarkers(params.prBody);
+  const commitLines = params.commits.flatMap((commit, index) => {
+    const body = commit.messageBody.trim();
+    return [`${index + 1}. ${commit.messageHeadline}`, body ? body : '_No commit body provided._'];
+  });
+
+  return [
+    '### PR body',
+    '',
+    prBody || '_No PR body provided._',
+    '',
+    '### Commit messages',
+    '',
+    ...commitLines,
+  ].join('\n');
+}
+
 export interface RenderWorkerBriefParams {
   issueNumber: number;
   issueTitle: string;
