@@ -20,6 +20,30 @@ export function extractAcceptanceCriteria(issueBody: string): string {
   return section.trim() || issueBody;
 }
 
+export interface RenderDraftPrBodyParams {
+  issueNumber: number;
+  issueBody: string;
+  round: number;
+}
+
+/** Renders the draft PR body while preserving the hidden round marker used by `gate`. */
+export function renderDraftPrBody(params: RenderDraftPrBodyParams): string {
+  const issueBody = params.issueBody.trim();
+
+  return [
+    '## Source Issue',
+    '',
+    `Closes #${params.issueNumber}`,
+    '',
+    '## Issue Body',
+    '',
+    issueBody || '_No issue body provided._',
+    '',
+    `<!-- agent:round=${params.round} -->`,
+    '',
+  ].join('\n');
+}
+
 export interface RenderWorkerBriefParams {
   issueNumber: number;
   issueTitle: string;

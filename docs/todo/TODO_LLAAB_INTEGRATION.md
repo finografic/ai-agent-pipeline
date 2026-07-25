@@ -76,6 +76,15 @@ Also give the issue a `## Acceptance Criteria` heading in its body. R1 (the loca
 reviewer) checks the diff against that section specifically; without it, R1 falls back to judging
 against the whole issue body, which is a weaker check.
 
+Draft PR conventions:
+
+- PR title mirrors the issue title. Keep issue titles human-readable and outcome-oriented, e.g.
+  `Graduate completed process state audit planning doc`.
+- PR body starts with `Closes #<issue-number>` so GitHub closes the issue on merge.
+- PR body copies the full issue body under an `Issue Body` heading so reviewers and R1 can see the
+  original summary and acceptance criteria without opening the issue.
+- The hidden `<!-- agent:round=N -->` marker remains in the PR body for `pipeline gate`.
+
 ## 3. Proven end-to-end (2026-07-25) — picking issues going forward
 
 The pipeline has now completed a full real cycle against LLAAB: `finografic/llaab#1` (graduate
@@ -118,7 +127,8 @@ branch" button) — simply re-running the same check job does not pick it up.
 pipeline status                 # check WIP count (limit is 1 right now) before starting anything
 pipeline run <issue-number>      # claims the agent:ready issue, creates a worktree under
                                   # ~/.agent-pipeline/worktrees/, invokes the routed worker CLI,
-                                  # opens a draft PR with "Closes #<issue>"
+                                  # opens a draft PR with the issue title, copied issue body,
+                                  # "Closes #<issue>", and the round marker
 # ... wait for LLAAB's own `lint` CI check to resolve on that PR ...
 pipeline gate <pr-number>        # runs R0 (deterministic) then R1 (local-model) if R0 passed;
                                   # posts one consolidated comment; advances the issue label to

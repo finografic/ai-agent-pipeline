@@ -81,9 +81,9 @@ Additional sample run:
       `pipeline run 1`. Confirmed all of: worktree created under
       `~/.agent-pipeline/worktrees/1-graduate-todo-registry-packages-md-to-do`, label swapped to
       `agent:in-progress`, a real conventional-commit landed, branch pushed, draft PR
-      [`finografic/llaab#2`](https://github.com/finografic/llaab/pull/2) opened with `Closes #1`
-      and `<!-- agent:round=0 -->`. Telemetry recorded a real `invoke` record (opencode, ~34s,
-      `outcome: success`, tokens `null` as documented).
+      [`finografic/llaab#2`](https://github.com/finografic/llaab/pull/2) opened. Telemetry
+      recorded a real `invoke` record (opencode, ~34s, `outcome: success`, tokens `null` as
+      documented).
       Getting here surfaced and fixed three real bugs — see "Bugs found via this run" below.
 
 Do **not** start with anything risky. Good first candidates, in order of preference:
@@ -124,7 +124,8 @@ Do **not** start with anything risky. Good first candidates, in order of prefere
    (`<worktreeRoot>/<issue>-<slug>/.pipeline.log`) as it runs.
 4. Confirm: a worktree was created under `~/.agent-pipeline/worktrees/`, the issue label swapped
    to `agent:in-progress`, a commit landed on the branch, the branch was pushed, and a **draft**
-   PR opened with `Closes #<issue>` and a `<!-- agent:round=0 -->` marker in the body.
+   PR opened with the issue title, copied issue body, `Closes #<issue>`, and the
+   `<!-- agent:round=0 -->` marker in the body.
 5. Check `telemetry/<today>.jsonl` — one `invoke` stage record with real duration and (for
    `claude-code`) real token counts.
 
@@ -256,3 +257,6 @@ tested against a real worker CLI's actual subprocess tree.
       verify checklist completeness or exhaustive inbound-link searches from the PR diff alone.
       Candidate fix: include worker command/evidence snippets in the PR body or R1 prompt, or add
       deterministic R0 checks for TODO/DONE graduation evidence before R1.
+- [x] Use a richer draft PR body template. Implemented after the first two LLAAB runs: PR title
+      continues to mirror the issue title, while PR body now includes `Closes #<issue>`, the full
+      copied issue body, and the hidden round marker.

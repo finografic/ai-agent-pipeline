@@ -12,7 +12,7 @@ import type { WorktreeInfo } from './worktree';
 import { pc } from './utils/picocolors';
 import { renderTemplate } from './utils/template.utils';
 
-import { extractAcceptanceCriteria, renderWorkerBrief } from './brief';
+import { extractAcceptanceCriteria, renderDraftPrBody, renderWorkerBrief } from './brief';
 import { claimIssue } from './claim';
 import { findRoutingRule, loadConfig, parseIssueLabels } from './config';
 import { createGithubClient } from './github';
@@ -309,7 +309,7 @@ async function runIssue(issueNumber: number): Promise<void> {
     return;
   }
 
-  const prBody = `Closes #${issueNumber}\n\n<!-- agent:round=0 -->\n`;
+  const prBody = renderDraftPrBody({ issueNumber, issueBody: issue.body, round: 0 });
   const pr = await github.createDraftPr({
     branch: worktree.branch,
     base: config.repo.defaultBranch,
