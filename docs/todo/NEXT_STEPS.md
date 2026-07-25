@@ -9,33 +9,39 @@
 
 ## 1. Verify worker adapter CLI flags (do this first, before any real `run`)
 
-All three adapters were written from documented conventions, not interactive `--help` output —
-the CLIs (`claude`, `codex`, `opencode`) were sandboxed out of reach in the build environment.
-
-- [ ] `claude --help` / `claude -p --help` — confirm `-p`, `--output-format json`,
-      `--dangerously-skip-permissions`, `--model` still match `src/workers/claude-code.ts`.
-      Confidence here is fairly high (Anthropic's own documented CLI); check the JSON result
-      shape too — `claude-code.ts` expects a `usage` object with `input_tokens`/`output_tokens`
-      plus `total_cost_usd`, and falls back to `null` tokens on any mismatch, so a shape drift
-      won't crash anything, just silently lose cost telemetry. Worth confirming directly.
-- [ ] `codex exec --help` — confirm `--full-auto` and `--model` are real flags for the installed
-      version. `src/workers/codex.ts` records `null` tokens unconditionally right now (lower
-      confidence on output format) — if `codex exec` has a real structured-output flag, wire it
-      up the same way `claude-code.ts` does, so W2/chore-class routing gets real telemetry too.
-- [ ] `opencode run --help` — same check as codex. This one matters more than it looks: the
-      routing table sends `class:chore`/`class:docs`, `risk:low` work here, which is meant to be
-      the cheapest, highest-volume path.
-- [ ] Once confirmed, update the adapter(s) and the `NOTE:` doc comments in each file (they
-      currently say "not verified — see the Open Questions in `.agents/handoff.md`"), and drop
-      the corresponding bullet from that file once it's no longer true.
+- [x] `claude --help` — confirmed 2026-07-25: `-p`, `--output-format json`,
+      `--dangerously-skip-permissions`, `--model` are all real flags on the installed CLI, no
+      changes needed in `src/workers/claude-code.ts`. The JSON result shape (`usage.input_tokens`/
+      `output_tokens`, `total_cost_usd`) is Anthropic's documented convention but was **not**
+      confirmed by a live invocation — that spends real API usage, so it's still nominally open;
+      falls back to `null` tokens on any shape mismatch either way, so low risk.
+- [x] `codex exec --help` — confirmed 2026-07-25, **and fixed a real bug**: `--full-auto` (what
+      the adapter used) is a deprecated compatibility flag on codex-cli 0.138.0; replaced with the
+      documented `--sandbox workspace-write`. Also wired up real token telemetry — `--json` emits
+      a `turn.completed` event with a genuine `usage.input_tokens`/`output_tokens` object (per
+      [Codex non-interactive mode docs](https://learn.chatgpt.com/docs/non-interactive-mode)); no
+      cost field exists in the stream, so `usdEstimate` stays `null`. Verified via `--help` +
+      public docs, not a live invocation.
+- [x] `opencode run --help` — confirmed 2026-07-25, **and fixed a real gap**: the adapter was
+      missing `--auto`, meaning a permission prompt with no TTY to answer it would hang the worker
+      until timeout-killed instead of completing. `--format json`'s event shape isn't documented
+      anywhere reachable, and `opencode stats` (the separate cost/token command) has no session
+      filter or JSON output, so token/cost fields stay `null` rather than guessed.
+- [x] Adapter `NOTE:` doc comments updated in all three files; the corresponding
+      `.agents/handoff.md` Open Questions bullet updated to match (worker CLI flags are no longer
+      "sandboxed out of reach" — only the two live-JSON-shape confirmations above remain open).
 
 ## 2. First real end-to-end `pipeline run` — pick a safe LLAAB issue
 
-> **Blocker as of 2026-07-25**: `gh issue list --repo finografic/llaab --state all` and
-> `gh pr list --repo finografic/llaab --state all` both return zero results. There is currently
-> nothing to label `agent:ready` — a qualifying issue has to be opened in LLAAB before this
-> section can proceed. See `docs/todo/TODO_LLAAB_INTEGRATION.md` for the LLAAB-side plan to seed
-> one.
+- [x] **Done 2026-07-25** — opened `finografic/llaab#1` (graduate `TODO_REGISTRY_PACKAGES.md` to
+      `DONE_REGISTRY_PACKAGES.md`), labeled `class:chore`/`risk:low`/`agent:ready`, ran
+      `pipeline run 1`. Confirmed all of: worktree created under
+      `~/.agent-pipeline/worktrees/1-graduate-todo-registry-packages-md-to-do`, label swapped to
+      `agent:in-progress`, a real conventional-commit landed, branch pushed, draft PR
+      [`finografic/llaab#2`](https://github.com/finografic/llaab/pull/2) opened with `Closes #1`
+      and `<!-- agent:round=0 -->`. Telemetry recorded a real `invoke` record (opencode, ~34s,
+      `outcome: success`, tokens `null` as documented).
+      Getting here surfaced and fixed three real bugs — see "Bugs found via this run" below.
 
 Do **not** start with anything risky. Good first candidates, in order of preference:
 
@@ -81,14 +87,64 @@ Do **not** start with anything risky. Good first candidates, in order of prefere
 
 ## 3. First real `pipeline gate` cycle
 
-1. Wait for the `lint` CI check to resolve on the draft PR from step 2.
-2. `pipeline gate <pr-number>` — confirm R0 runs first (check the console output order), and R1
-   only runs if R0 passed. Confirm exactly one consolidated comment gets posted.
-3. If it passes both gates: confirm the issue label swapped to `agent:approved` and the PR was
-   marked ready for review (no longer draft).
-4. Check `telemetry/<today>.jsonl` for `r0` and `r1` stage records — `r1`'s `inputTokens`/
-   `outputTokens` should be real numbers from Ollama (not null), `usdEstimate: 0` for both (local
-   / free).
+- [x] **Done 2026-07-25, with a real complication** — `gh pr checks 2` confirmed `lint` live
+      (matches the indirect confirmation in §8). It resolved to **fail** — not because of
+      anything in the PR's own diff, but because **LLAAB's `master` branch's last 5 CI runs have
+      all failed** (`gh run list --repo finografic/llaab --branch master --workflow CI`), a
+      pre-existing formatting problem across ~22 unrelated files. `pipeline gate 2` correctly ran
+      R0 first, R0 failed on `requiredChecks`, posted exactly one comment
+      (`**R0: fail**\n- requiredChecks: Check "lint" is fail`), and R1 never ran (no `r1`
+      telemetry record) — all exactly as designed. This is a real, unresolved blocker on the
+      LLAAB side: **no PR can currently pass `requiredChecks: ['lint']` until LLAAB's own
+      formatting baseline is fixed** — that's LLAAB's problem to fix, not this pipeline's.
+      Round-retry then correctly invoked the worker twice more with the R0 findings; the worker
+      correctly declined to fix ~22 unrelated files as out of scope, and — after the round-N
+      commit-detection bug below was fixed — round 2 correctly reported "no new commits" and
+      labeled `agent:needs-human`.
+- [x] **LLAAB's baseline was fixed for real 2026-07-25** (LLAAB commit "fix(ci): resolve lint
+      formatting drift", pushed to `master`) — this unblocked the rest of the cycle. The PR's own
+      `lint` check still needed the branch updated (`git merge origin/master`) since the CI workflow
+      checks out the PR's head branch as committed, not a fresh merge with current `master` — a
+      simple re-run of the same job did **not** pick up the fix, only a real branch update did.
+      After that: R0 passed for the first time, and **R1 ran for real for the first time all
+      session** (previously always short-circuited by R0 failing first) — `gpt-oss:20b`, real
+      tokens (1641 in / 84 out), and a legitimate fail verdict: the diff doesn't show evidence the
+      "search for inbound references" acceptance-criteria step was actually performed (even
+      though that search genuinely turned up nothing, per manual verification during candidate
+      selection). Round 2 was already spent, so this correctly triggered the **"rounds exhausted"
+      comment/label path** — the one path in §4 below that hadn't been exercised for real yet.
+      `finografic/llaab#2` is left open, draft, `agent:needs-human`, for a human call: the
+      underlying work is correct, but R1's ask for documented evidence is a fair, defensible bar.
+- **Caution while merging `origin/master` into an agent worktree**: a bare `git push` from a
+  worktree can push _every_ local branch with a remote counterpart if `push.default: matching` is
+  set (as it is in LLAAB) — worktrees share local branch refs with the main checkout, so this can
+  push someone's unrelated, not-yet-intentionally-pushed local `master` commit too. Always use
+  `git push origin HEAD` (current branch only) from a worktree, never a bare `git push`.
+
+### Bugs found via this run (all fixed 2026-07-25)
+
+- **`pipeline.config.ts`**: opencode's routing-table model was a bare `glm-5.2`; opencode
+  requires `provider/model` format. Fixed to `opencode-go/glm-5.2` (confirmed via
+  `opencode models`).
+- **`src/workers/opencode.ts` — missing `--dir`**: `opencode run` does **not** reliably scope
+  itself to the subprocess's OS-level `cwd` — a live run showed it operating against
+  _this_ repo (agent-pipeline) instead of the actual LLAAB worktree, evidenced by
+  `git branch --show-current`/`git status` inside the worker's own tool calls returning this
+  repo's branch and dirty files. `--dir <worktreePath>` fixes it (verified live from an
+  unrelated cwd). This was the most severe of the three — silently wrong-repo execution, not a
+  crash.
+- **`src/worktree.ts` — `hasNewCommits` compared against the wrong ref**: it checked
+  `origin/<defaultBranch>..HEAD`, so once round 0 pushed a commit, _every later round_ looked
+  like it "made commits" regardless of whether that round's worker did anything — silently
+  burning retry rounds instead of correctly detecting "worker made no further changes." Fixed by
+  comparing against the HEAD sha captured immediately before each round's invocation instead of a
+  fixed ref (`src/cli.ts`'s `invokeWorkerAndPush`). Added a regression test
+  (`tests/worktree.test.ts`) that fails against the old behavior and passes against the fix.
+- **Environment-level, not a code bug**: this machine's `~/.config/opencode/opencode.json`
+  (global, outside any repo) had `lean-ctx` wired in as an MCP server, which intermittently
+  leaked _this_ repo's file-tree context into opencode worker sessions (independent of the
+  `--dir` bug above). Disabled (`"enabled": false`, not deleted) rather than fixed in code, since
+  it's a machine config, not a repo one.
 
 ## 4. Exercise the failure and retry paths (use a disposable test PR, not real LLAAB work)
 
@@ -98,10 +154,12 @@ worker to naturally produce a bad diff:
 - [ ] **Forbidden path rejection** — open a PR that touches `vault/` or `.agents/` and run
       `pipeline gate` against it. Confirm R0 fails immediately with a `forbiddenPaths` violation
       and R1 never runs (check telemetry — no `r1` record should appear).
-- [ ] **Round exhaustion** — with `limits.maxRoundsPerIssue: 2`, deliberately fail gate twice on
-      the same PR (e.g. a PR that R1 will reasonably call incomplete) and confirm the _third_
-      `pipeline gate` call is never reached — the second failure should label
-      `agent:needs-human` and stop, per the brief's "never attempt a third round" rule.
+- [x] **Round exhaustion — fully validated for real, 2026-07-25**, via `finografic/llaab#2` (see
+      §3): round 2 first hit `agent:needs-human` via the "no new commits" path (once the
+      `hasNewCommits` bug was fixed), then — after LLAAB's CI baseline was fixed and R1 ran for
+      real and failed — a further `pipeline gate` call correctly hit the **"exhausted 2 rounds"**
+      comment/label path (`nextRound > maxRoundsPerIssue`), posting the exhaustion comment and
+      stopping without attempting a third round. Both round-exhaustion paths are now proven.
 - [ ] **R1 malformed-JSON fail-closed** — harder to force deliberately since it depends on the
       local model's output; if it happens naturally during testing, confirm the PR gets
       `agent:needs-human` immediately (not a round-retry) and the comment explains why.

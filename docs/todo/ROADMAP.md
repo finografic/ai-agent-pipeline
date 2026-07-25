@@ -25,15 +25,28 @@ When an item is done, move it to the Done section at the bottom with a completio
       `pipeline doctor` re-verified 9/9 against real `finografic/llaab` post-link.
 - [x] Confirm LLAAB's CI check name — `lint`, confirmed via `.github/workflows/ci.yml` inspection
       2026-07-25 (no live PR existed to check directly; re-verify once one does).
-- [ ] Verify `claude-code.ts`/`codex.ts`/`opencode.ts` worker adapter CLI flags against real
-      `--help` output before the first real `pipeline run` (see `docs/todo/NEXT_STEPS.md`) — still
-      blocked in this session's sandbox, same as during the original build.
-- [ ] **Blocker**: LLAAB has zero open issues and zero PRs (checked 2026-07-25) — a qualifying
-      issue must exist before `pipeline run` can be exercised end-to-end. See
-      `docs/todo/TODO_LLAAB_INTEGRATION.md`.
-- [ ] Label a real, small LLAAB issue `agent:ready` and run `pipeline run <issue>` end-to-end.
+- [x] Verify `claude-code.ts`/`codex.ts`/`opencode.ts` worker adapter CLI flags against real
+      `--help` output — done 2026-07-25, fixed two real bugs (`codex.ts`'s deprecated
+      `--full-auto`, `opencode.ts`'s missing `--auto`). JSON output shapes for `claude-code.ts`/
+      `opencode.ts` still need a live invocation to fully confirm (see `docs/todo/NEXT_STEPS.md`
+      §1) — that costs real usage, so it's gated on a deliberate decision to spend it.
+- [x] First real end-to-end `run` + `gate` — done 2026-07-25 against `finografic/llaab#1`/`#2`.
+      Found and fixed three real bugs along the way: a bad opencode model string in
+      `pipeline.config.ts` (missing `provider/` prefix), a missing `--dir` flag in
+      `src/workers/opencode.ts` (opencode was silently operating against _this_ repo instead of
+      the worktree), and a `hasNewCommits` ref-comparison bug in `src/worktree.ts` that made
+      every round after the first falsely look like it "made commits." See
+      `docs/todo/NEXT_STEPS.md` §2–3 for full detail.
+- [x] LLAAB's CI baseline blocker — **fixed on the LLAAB side same day** (LLAAB commit "fix(ci):
+      resolve lint formatting drift", pushed to `master` 2026-07-25). Unblocked R0 and let R1 run
+      for real for
+      the first time all session; R1 gave a legitimate fail verdict (see `docs/todo/NEXT_STEPS.md`
+      §3), which correctly exhausted the 2-round budget — both round-exhaustion paths (no-commits,
+      and rounds-exhausted) are now proven live. `finografic/llaab#2` is open, draft,
+      `agent:needs-human`, awaiting a human call on R1's finding.
 - [ ] Collect a telemetry sample from 3+ real runs and tune the placeholder budget caps in
-      `pipeline.config.ts`.
+      `pipeline.config.ts` (2026-07-25 contributed 6 real `invoke`/`r0` records, but all against
+      the same blocked issue, so not yet a representative sample).
 
 ---
 

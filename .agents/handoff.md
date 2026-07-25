@@ -34,16 +34,21 @@ deterministic, `r1-contract.ts` local-model via `llm/local.ts`'s minimal Ollama 
 ## Status
 
 Phase 0 and Phase 1 (per the build brief) are both implemented, typecheck/lint/format clean, and
-covered by 36 `bun:test` tests (config validation, all six R0 checks, R1 JSON parsing including
+covered by 37 `bun:test` tests (config validation, all six R0 checks, R1 JSON parsing including
 the malformed/retry/escalation paths via a mocked Ollama client, worktree lifecycle against a
-disposable fixture repo, WIP-limit enforcement). `pipeline doctor` has been run live against the
-real `finografic/llaab` repo — all 9 checks pass, and the 12 pipeline labels now exist there for
-real. The CLI is now linked (`bun link`, 2026-07-25) — `~/.bun/bin/pipeline` resolves globally, and
-`pipeline doctor` re-confirmed 9/9 checks post-link. `run`/`gate` have not yet been exercised
-end-to-end against a real issue — blocked, not just un-started: LLAAB currently has zero open
-issues and zero PRs (confirmed 2026-07-25). See `docs/todo/NEXT_STEPS.md` for the concrete steps
-once an issue exists, and `docs/todo/TODO_LLAAB_INTEGRATION.md` for the LLAAB-side plan to seed
-one and use the linked CLI from there.
+disposable fixture repo including round-retry commit-detection, WIP-limit enforcement). The CLI is
+linked (`bun link`) — `~/.bun/bin/pipeline` resolves globally.
+
+**First real end-to-end `run` + `gate` happened 2026-07-25**, against `finografic/llaab#1`/`#2` —
+opencode produced a real commit and a real draft PR. It surfaced and fixed three real bugs (see Key
+Decisions). LLAAB's `master` CI baseline was broken (pre-existing, unrelated formatting drift) and
+then fixed same-day on the LLAAB side; once the PR's branch picked up that fix, R0 passed and **R1
+ran for real for the first time all session** (previously always short-circuited by R0 failing
+first), giving a legitimate fail verdict. That correctly exhausted the 2-round budget — both
+round-exhaustion paths (no-new-commits, and rounds-exhausted) are now proven live, not just in
+tests. `finografic/llaab#2` is left open, draft, labeled `agent:needs-human`, for a human call on
+R1's finding. See `docs/todo/NEXT_STEPS.md` §2–3 for the full trail, and
+`docs/todo/TODO_LLAAB_INTEGRATION.md` for day-to-day usage from the LLAAB side.
 
 Explicitly not built (per brief, out of scope for now): Groomer, R2 adversarial review, Hermes
 integration, scheduled execution, concurrent issues (WIP > 1), a web UI, merge automation.
@@ -64,17 +69,47 @@ integration, scheduled execution, concurrent issues (WIP > 1), a web UI, merge a
   config for Phase 3; only `run` reads `routing.worker`/`routing.effort`.
 - Test-integrity (R0's sixth check — deleted/weakened test files) is a non-blocking flag, not a
   hard failure, per the brief's explicit carve-out. Checks 1–5 stop the gate at first failure.
+- `pipeline.config.ts`'s opencode routing entries use `opencode-go/glm-5.2` (a `provider/model`
+  string), not a bare model name — opencode requires the provider prefix; a bare name fails with
+  `ProviderModelNotFoundError` immediately on invocation. Found live 2026-07-25.
+- `src/workers/opencode.ts` always passes `--dir <worktreePath>` — `opencode run` does not
+  reliably scope itself to the subprocess's OS-level `cwd` alone; a live run showed it operating
+  against this repo instead of the actual target worktree until `--dir` was added. Found and
+  fixed live 2026-07-25 — see `docs/todo/NEXT_STEPS.md` §3 for the full evidence trail.
+- `hasNewCommits` (`src/worktree.ts`) takes a `since` sha, not a fixed ref — round-retry callers
+  must capture HEAD immediately before each round's worker invocation and compare against that,
+  not the default branch, or every round after the first falsely looks like it "made commits."
+  Found live 2026-07-25 via a real round-2 retry; fixed, with a regression test added.
+- This machine's global `~/.config/opencode/opencode.json` had `lean-ctx` wired in as an MCP
+  server, which intermittently leaked this repo's file-tree context into opencode worker
+  sessions. Disabled (`"enabled": false`) 2026-07-25 — a machine config fix, not a repo one; worth
+  knowing about if opencode behaves strangely on a different machine that has the same wiring.
+- LLAAB's git config has `push.default: matching`. A bare `git push` from any of LLAAB's worktrees
+  pushes _every_ local branch with a remote counterpart, not just the current one — worktrees
+  share local branch refs with the main checkout, so this can push someone else's unrelated,
+  not-yet-intentionally-pushed local `master` commit too (happened live 2026-07-25, harmlessly, but
+  it was still a push to `master` that shouldn't have happened). Always use `git push origin HEAD`
+  from a worktree when doing anything beyond what `pipeline`'s own code already does (which only
+  ever does `git push --set-upstream origin <branch>` on the agent's own branch, never bare).
 
 ## Open Questions
 
-- Worker adapter CLI flags (`claude-code.ts`, `codex.ts`, `opencode.ts`) are based on documented
-  conventions, not verified interactively — the CLIs resolve on `PATH` (`pipeline doctor` finds
-  all three) but remain uninvokable from this sandboxed session (shell-allowlist restriction),
-  same as during the original build. Verify against real `--help` output before the first real
-  `pipeline run`.
-- LLAAB's CI check name (`requiredChecks: ['lint']`) was confirmed indirectly (2026-07-25) by
-  reading `.github/workflows/ci.yml` rather than a live `gh pr checks` call — no LLAAB PR exists
-  yet. Low-risk but not 100% certain; re-check the first time a real PR's checks are visible.
+- Worker adapter CLI flags confirmed 2026-07-25 via `--help` + public docs (the shell-allowlist
+  restriction that blocked this during the original build and the prior session was lifted).
+  What's still open: `claude-code.ts`'s and `opencode.ts`'s JSON output shapes weren't confirmed
+  by a live invocation (that spends real API/model usage — needs a deliberate sign-off).
+- LLAAB's CI check name (`requiredChecks: ['lint']`) is confirmed **live** (2026-07-25, via
+  `gh pr checks` on `finografic/llaab#2`) — no longer an open question. The baseline formatting
+  drift that was failing it on every PR is also fixed now (LLAAB-side commit `fix(ci): resolve
+lint formatting drift`, same day) — no longer a blocker.
+- CI workflows triggered on `pull_request` check out the PR's head branch as committed, not a
+  fresh merge with the current default branch — a fix landing on `master` does **not**
+  retroactively apply to an open PR's own check runs. The PR's branch itself needs
+  `origin/<defaultBranch>` merged in (and pushed) before its check will reflect the fix. Worth
+  remembering for any future "why does this PR still fail a check that's fixed on master" moment.
+- Both round-exhaustion paths (`hasNewCommits` correctly reporting no new commits; the
+  `nextRound > maxRoundsPerIssue` "exhausted" comment/label path) are now proven live via
+  `finografic/llaab#2`, not just in tests.
 - Line count for Phase 0+1 (~1,976 in `src/` + config, excluding tests) is well over the brief's
   800–1,200 guideline (`src/cli.ts` at 626 lines and `src/github.ts` at 273 are most of it —
   genuine breadth plus this project's one-field-per-line `oxfmt` style, not padding). No
