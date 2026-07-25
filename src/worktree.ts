@@ -91,16 +91,30 @@ export async function destroyWorktree({
   await $`git -C ${repoPath} branch -D ${branch}`.quiet().nothrow();
 }
 
-export interface HasNewCommitsParams {
+export interface GetHeadShaParams {
   worktreePath: string;
-  defaultBranch: string;
 }
 
-/** True if the worktree's branch has commits beyond the default branch it forked from. */
-export async function hasNewCommits({ worktreePath, defaultBranch }: HasNewCommitsParams): Promise<boolean> {
-  const result = await $`git -C ${worktreePath} rev-list --count origin/${defaultBranch}..HEAD`
-    .quiet()
-    .text();
+/** Returns the worktree's current HEAD commit sha. */
+export async function getHeadSha({ worktreePath }: GetHeadShaParams): Promise<string> {
+  const result = await $`git -C ${worktreePath} rev-parse HEAD`.quiet().text();
+  return result.trim();
+}
+
+export interface HasNewCommitsParams {
+  worktreePath: string;
+  since: string;
+}
+
+/**
+ * True if the worktree's branch has commits beyond `since` (a ref or sha). Callers doing
+ * round-based retries must pass the HEAD sha captured *before* this round's worker invocation,
+ * not a fixed ref like the default branch — otherwise every round after the first always looks
+ * like it "made commits" simply because an earlier round already did, even if this round's
+ * worker made no further changes.
+ */
+export async function hasNewCommits({ worktreePath, since }: HasNewCommitsParams): Promise<boolean> {
+  const result = await $`git -C ${worktreePath} rev-list --count ${since}..HEAD`.quiet().text();
   return Number(result.trim()) > 0;
 }
 

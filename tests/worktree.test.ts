@@ -4,7 +4,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { $ } from 'bun';
 
-import { createOrResumeWorktree, destroyWorktree, hasNewCommits, pushBranch, slugify } from '../src/worktree';
+import {
+  createOrResumeWorktree,
+  destroyWorktree,
+  getHeadSha,
+  hasNewCommits,
+  pushBranch,
+  slugify,
+} from '../src/worktree';
 
 /**
  * Everything here runs against a disposable bare+clone fixture repo created fresh
@@ -83,13 +90,14 @@ describe('worktree lifecycle (disposable fixture repo)', () => {
       issueTitle: 'Commit tracking',
     });
 
-    expect(await hasNewCommits({ worktreePath: worktree.path, defaultBranch: 'master' })).toBe(false);
+    const initialSha = await getHeadSha({ worktreePath: worktree.path });
+    expect(await hasNewCommits({ worktreePath: worktree.path, since: initialSha })).toBe(false);
 
     await Bun.write(join(worktree.path, 'new-file.txt'), 'hello');
     await $`git -C ${worktree.path} add new-file.txt`.quiet();
     await $`git -C ${worktree.path} commit -q -m ${'feat: add new file'}`.quiet();
 
-    expect(await hasNewCommits({ worktreePath: worktree.path, defaultBranch: 'master' })).toBe(true);
+    expect(await hasNewCommits({ worktreePath: worktree.path, since: initialSha })).toBe(true);
 
     await pushBranch({ worktreePath: worktree.path, branch: worktree.branch });
     const remoteBranches = await $`git -C ${repoPath} branch -r`.quiet().text();
@@ -100,5 +108,30 @@ describe('worktree lifecycle (disposable fixture repo)', () => {
 
     const localBranches = await $`git -C ${repoPath} branch`.quiet().text();
     expect(localBranches).not.toContain(worktree.branch);
+  });
+
+  test('hasNewCommits against a fixed ref falsely stays true across a no-op round — since must be re-captured per round', async () => {
+    const worktree = await createOrResumeWorktree({
+      repoPath,
+      worktreeRoot,
+      defaultBranch: 'master',
+      issueNumber: 4,
+      issueTitle: 'Round retry regression',
+    });
+
+    // Round 0: worker commits.
+    await Bun.write(join(worktree.path, 'round-0.txt'), 'round 0');
+    await $`git -C ${worktree.path} add round-0.txt`.quiet();
+    await $`git -C ${worktree.path} commit -q -m ${'feat: round 0 change'}`.quiet();
+    const round0Sha = await getHeadSha({ worktreePath: worktree.path });
+
+    // Round 1: worker makes no further changes (e.g. it correctly declines an out-of-scope fix).
+    // Comparing against the default branch (the old, buggy behavior) would wrongly report "made
+    // commits" here purely because of round 0's commit, even though nothing changed this round.
+    expect(await hasNewCommits({ worktreePath: worktree.path, since: 'master' })).toBe(true);
+    // Comparing against round 0's own HEAD (the fix) correctly reports no new commits.
+    expect(await hasNewCommits({ worktreePath: worktree.path, since: round0Sha })).toBe(false);
+
+    await destroyWorktree({ repoPath, worktreePath: worktree.path, branch: worktree.branch });
   });
 });

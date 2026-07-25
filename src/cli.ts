@@ -26,6 +26,7 @@ import {
   createOrResumeWorktree,
   destroyWorktree,
   expandHome,
+  getHeadSha,
   hasNewCommits,
   pushBranch,
   resolveWorktree,
@@ -233,6 +234,7 @@ async function invokeWorkerAndPush(
   const worker = createWorker(workerName);
   const startedAt = new Date().toISOString();
   const startedMs = performance.now();
+  const beforeSha = await getHeadSha({ worktreePath: worktree.path });
   const result = await worker.invoke({
     worktreePath: worktree.path,
     brief,
@@ -256,10 +258,10 @@ async function invokeWorkerAndPush(
 
   if (result.timedOut) return 'timeout';
 
-  const madeCommits = await hasNewCommits({
-    worktreePath: worktree.path,
-    defaultBranch: config.repo.defaultBranch,
-  });
+  // Compare against this invocation's starting HEAD, not the default branch — on a round-N
+  // retry the branch is already ahead of the default branch from earlier rounds, so that would
+  // always look like "made commits" even when this round's worker made no further changes.
+  const madeCommits = await hasNewCommits({ worktreePath: worktree.path, since: beforeSha });
   if (!madeCommits) return 'no-commits';
 
   await pushBranch({ worktreePath: worktree.path, branch: worktree.branch });
@@ -561,7 +563,8 @@ async function abortIssue(issueNumber: number): Promise<void> {
 
   await destroyWorktree({ repoPath: config.repo.path, worktreePath: worktree.path, branch: worktree.branch });
 
-  if (issue.labels.includes('agent:in-progress')) {
+  const wasInProgress = issue.labels.includes('agent:in-progress');
+  if (wasInProgress) {
     await github.swapIssueLabel({ issueNumber, remove: 'agent:in-progress', add: 'agent:ready' });
   }
 
@@ -577,9 +580,10 @@ async function abortIssue(issueNumber: number): Promise<void> {
     usdEstimate: null,
     outcome: 'aborted',
   });
-  console.log(
-    pc.yellow(`Aborted issue #${issueNumber} — worktree destroyed, claim released to agent:ready.`),
-  );
+  const labelNote = wasInProgress
+    ? 'claim released to agent:ready'
+    : 'label left as-is (was not agent:in-progress)';
+  console.log(pc.yellow(`Aborted issue #${issueNumber} — worktree destroyed, ${labelNote}.`));
 }
 
 // ---------- main ----------
