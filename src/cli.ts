@@ -326,21 +326,25 @@ async function runIssue(issueNumber: number): Promise<void> {
 
 // ---------- gate ----------
 
-function renderGateComment(r0: R0Result, r1?: R1Outcome): string {
-  const lines: string[] = [r0.passed ? '**R0: pass**' : '**R0: fail**'];
+export function renderGateComment(r0: R0Result, r1?: R1Outcome): string {
+  const lines: string[] = [r0.passed ? '**R0: ✅ pass**' : '**R0: ❌ fail**'];
   for (const violation of r0.violations) {
     lines.push(
-      `- ${violation.check}: ${violation.message}${violation.file !== undefined ? ` (\`${violation.file}\`)` : ''}`,
+      `- ❌ ${violation.check}: ${violation.message}${violation.file !== undefined ? ` (\`${violation.file}\`)` : ''}`,
     );
   }
   for (const flag of r0.flags) {
     lines.push(
-      `- warning — ${flag.check}: ${flag.message}${flag.file !== undefined ? ` (\`${flag.file}\`)` : ''}`,
+      `- ⚠️ warning — ${flag.check}: ${flag.message}${flag.file !== undefined ? ` (\`${flag.file}\`)` : ''}`,
     );
   }
 
   if (r1 !== undefined && r1.kind === 'reviewed') {
-    lines.push('', isR1Pass(r1) ? '**R1: pass**' : '**R1: fail**', `confidence: ${r1.verdict.confidence}`);
+    lines.push(
+      '',
+      isR1Pass(r1) ? '**R1: ✅ pass**' : '**R1: ❌ fail**',
+      `confidence: ${r1.verdict.confidence}`,
+    );
     for (const criterion of r1.verdict.unmetCriteria) {
       lines.push(`- unmet criterion: ${criterion.criterion} — ${criterion.why}`);
     }
