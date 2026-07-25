@@ -32,6 +32,8 @@ describe('worktree lifecycle (disposable fixture repo)', () => {
 
     await $`git init -q --bare ${originPath}`.quiet();
     await $`git clone -q ${originPath} ${repoPath}`.quiet();
+    await $`git -C ${repoPath} config user.name ${'Agent Pipeline Test'}`.quiet();
+    await $`git -C ${repoPath} config user.email ${'agent-pipeline-test@example.com'}`.quiet();
     await $`git -C ${repoPath} commit -q --allow-empty -m ${'chore: init fixture repo'}`.quiet();
     await $`git -C ${repoPath} push -q origin HEAD:master`.quiet();
   });

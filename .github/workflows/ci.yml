@@ -22,10 +22,15 @@ jobs:
         with:
           bun-version: "1.2"
 
-      - name: Install deps
-        run: bun install --frozen-lockfile
+      - name: Configure GitHub Packages auth
+        run: |
+          test -n "${NPM_TOKEN}" || (echo "::error::NPM_TOKEN secret is required for GitHub Packages" && exit 1)
+          echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" >> .npmrc
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
 
       - name: Lint
         run: bun run lint:ci
