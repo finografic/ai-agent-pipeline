@@ -336,7 +336,7 @@ async function runIssue(issueNumber: number): Promise<void> {
 // ---------- gate ----------
 
 export function renderGateComment(r0: R0Result, r1?: R1Outcome): string {
-  const lines: string[] = [r0.passed ? '**R0: ✅ pass**' : '**R0: ❌ fail**'];
+  const lines: string[] = [r0.passed ? '**R0:** ✅ PASS' : '**R0:** ❌ FAIL'];
   for (const violation of r0.violations) {
     lines.push(
       `- ❌ ${violation.check}: ${violation.message}${violation.file !== undefined ? ` (\`${violation.file}\`)` : ''}`,
@@ -350,8 +350,8 @@ export function renderGateComment(r0: R0Result, r1?: R1Outcome): string {
 
   if (r1 !== undefined && r1.kind === 'reviewed') {
     lines.push(
+      isR1Pass(r1) ? '**R1:** ✅ PASS' : '**R1:** ❌ FAIL',
       '',
-      isR1Pass(r1) ? '**R1: ✅ pass**' : '**R1: ❌ fail**',
       `confidence: ${r1.verdict.confidence}`,
     );
     for (const criterion of r1.verdict.unmetCriteria) {
