@@ -2,6 +2,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { $ } from 'bun';
+import type { GithubAuthEnvProvider } from './github-app-auth';
 
 export interface GithubIssue {
   number: number;
@@ -102,15 +103,38 @@ interface RawPr {
   commits: Array<{ oid: string; messageHeadline: string; messageBody: string }>;
 }
 
+async function ghCommandEnv(authEnvProvider?: GithubAuthEnvProvider): Promise<NodeJS.ProcessEnv> {
+  return authEnvProvider === undefined ? process.env : { ...process.env, ...(await authEnvProvider()) };
+}
+
+async function ghQuiet(repoSlug: string, args: string[], authEnvProvider?: GithubAuthEnvProvider) {
+  return $`gh ${args} -R ${repoSlug}`.env(await ghCommandEnv(authEnvProvider)).quiet();
+}
+
+async function ghQuietNoThrow(repoSlug: string, args: string[], authEnvProvider?: GithubAuthEnvProvider) {
+  return $`gh ${args} -R ${repoSlug}`
+    .env(await ghCommandEnv(authEnvProvider))
+    .quiet()
+    .nothrow();
+}
+
 /** Runs `gh <args>` scoped to `repoSlug`, quiet (no passthrough), and returns parsed JSON stdout. */
-async function ghJson<T>(repoSlug: string, args: string[]): Promise<T> {
-  const result = await $`gh ${args} -R ${repoSlug}`.quiet();
+async function ghJson<T>(
+  repoSlug: string,
+  args: string[],
+  authEnvProvider?: GithubAuthEnvProvider,
+): Promise<T> {
+  const result = await ghQuiet(repoSlug, args, authEnvProvider);
   return JSON.parse(result.stdout.toString()) as T;
 }
 
 /** Runs `gh <args>` scoped to `repoSlug`, quiet, and returns raw stdout text. */
-async function ghText(repoSlug: string, args: string[]): Promise<string> {
-  const result = await $`gh ${args} -R ${repoSlug}`.quiet();
+async function ghText(
+  repoSlug: string,
+  args: string[],
+  authEnvProvider?: GithubAuthEnvProvider,
+): Promise<string> {
+  const result = await ghQuiet(repoSlug, args, authEnvProvider);
   return result.stdout.toString();
 }
 
@@ -160,9 +184,10 @@ function toPr(raw: RawPr): GithubPr {
 
 export interface CreateGithubClientParams {
   repoSlug: string;
+  authEnvProvider?: GithubAuthEnvProvider;
 }
 
-export function createGithubClient({ repoSlug }: CreateGithubClientParams): GithubClient {
+export function createGithubClient({ repoSlug, authEnvProvider }: CreateGithubClientParams): GithubClient {
   return {
     async ensureLabels(labels) {
       for (const label of labels) {
@@ -173,54 +198,55 @@ export function createGithubClient({ repoSlug }: CreateGithubClientParams): Gith
         if (label.description !== undefined && label.description !== '') {
           args.push('--description', label.description);
         }
-        await $`gh ${args} -R ${repoSlug}`.quiet();
+        await ghQuiet(repoSlug, args, authEnvProvider);
       }
     },
 
     async getIssue(issueNumber) {
-      const raw = await ghJson<RawIssue>(repoSlug, [
-        'issue',
-        'view',
-        String(issueNumber),
-        '--json',
-        ISSUE_FIELDS,
-      ]);
+      const raw = await ghJson<RawIssue>(
+        repoSlug,
+        ['issue', 'view', String(issueNumber), '--json', ISSUE_FIELDS],
+        authEnvProvider,
+      );
       return toIssue(raw);
     },
 
     async countOpenIssuesWithLabel(label) {
-      const raw = await ghJson<RawIssue[]>(repoSlug, [
-        'issue',
-        'list',
-        '--state',
-        'open',
-        '--label',
-        label,
-        '--json',
-        'number',
-      ]);
+      const raw = await ghJson<RawIssue[]>(
+        repoSlug,
+        ['issue', 'list', '--state', 'open', '--label', label, '--json', 'number'],
+        authEnvProvider,
+      );
       return raw.length;
     },
 
     async swapIssueLabel({ issueNumber, remove, add }) {
-      await $`gh issue edit ${String(issueNumber)} --remove-label ${remove} --add-label ${add} -R ${repoSlug}`.quiet();
+      await ghQuiet(
+        repoSlug,
+        ['issue', 'edit', String(issueNumber), '--remove-label', remove, '--add-label', add],
+        authEnvProvider,
+      );
     },
 
     async createDraftPr({ branch, base, title, body }) {
       const url = await withTempFile(body, (bodyPath) =>
-        ghText(repoSlug, [
-          'pr',
-          'create',
-          '--draft',
-          '--base',
-          base,
-          '--head',
-          branch,
-          '--title',
-          title,
-          '--body-file',
-          bodyPath,
-        ]),
+        ghText(
+          repoSlug,
+          [
+            'pr',
+            'create',
+            '--draft',
+            '--base',
+            base,
+            '--head',
+            branch,
+            '--title',
+            title,
+            '--body-file',
+            bodyPath,
+          ],
+          authEnvProvider,
+        ),
       );
       const trimmedUrl = url.trim();
       const match = /\/pull\/(\d+)/.exec(trimmedUrl);
@@ -231,18 +257,24 @@ export function createGithubClient({ repoSlug }: CreateGithubClientParams): Gith
     },
 
     async getPr(prNumber) {
-      const raw = await ghJson<RawPr>(repoSlug, ['pr', 'view', String(prNumber), '--json', PR_FIELDS]);
+      const raw = await ghJson<RawPr>(
+        repoSlug,
+        ['pr', 'view', String(prNumber), '--json', PR_FIELDS],
+        authEnvProvider,
+      );
       return toPr(raw);
     },
 
     async getPrDiff(prNumber) {
-      return ghText(repoSlug, ['pr', 'diff', String(prNumber)]);
+      return ghText(repoSlug, ['pr', 'diff', String(prNumber)], authEnvProvider);
     },
 
     async getPrChecks(prNumber) {
-      const result = await $`gh pr checks ${String(prNumber)} --json name,bucket -R ${repoSlug}`
-        .quiet()
-        .nothrow();
+      const result = await ghQuietNoThrow(
+        repoSlug,
+        ['pr', 'checks', String(prNumber), '--json', 'name,bucket'],
+        authEnvProvider,
+      );
       // Exit code 8 means "checks pending" — still valid JSON on stdout, not a failure.
       if (result.exitCode !== 0 && result.exitCode !== 8) {
         throw new Error(`gh pr checks failed (exit ${result.exitCode}): ${result.stderr.toString()}`);
@@ -251,22 +283,26 @@ export function createGithubClient({ repoSlug }: CreateGithubClientParams): Gith
     },
 
     async swapPrLabel({ prNumber, remove, add }) {
-      await $`gh pr edit ${String(prNumber)} --remove-label ${remove} --add-label ${add} -R ${repoSlug}`.quiet();
+      await ghQuiet(
+        repoSlug,
+        ['pr', 'edit', String(prNumber), '--remove-label', remove, '--add-label', add],
+        authEnvProvider,
+      );
     },
 
     async postPrComment({ prNumber, body }) {
       await withTempFile(body, (bodyPath) =>
-        $`gh pr comment ${String(prNumber)} --body-file ${bodyPath} -R ${repoSlug}`.quiet(),
+        ghQuiet(repoSlug, ['pr', 'comment', String(prNumber), '--body-file', bodyPath], authEnvProvider),
       );
     },
 
     async markPrReadyForReview(prNumber) {
-      await $`gh pr ready ${String(prNumber)} -R ${repoSlug}`.quiet();
+      await ghQuiet(repoSlug, ['pr', 'ready', String(prNumber)], authEnvProvider);
     },
 
     async updatePrBody({ prNumber, body }) {
       await withTempFile(body, (bodyPath) =>
-        $`gh pr edit ${String(prNumber)} --body-file ${bodyPath} -R ${repoSlug}`.quiet(),
+        ghQuiet(repoSlug, ['pr', 'edit', String(prNumber), '--body-file', bodyPath], authEnvProvider),
       );
     },
   };

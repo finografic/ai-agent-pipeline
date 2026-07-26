@@ -42,9 +42,25 @@ bun install
 bun link          # makes the `pipeline` command available globally
 ```
 
-Requires Bun ≥ 1.2, the `gh` CLI (authenticated), `git`, and a reachable Ollama instance with the
-two models named in `pipeline.config.ts` pulled locally. Run `pipeline doctor` to verify all of
-this before doing anything else.
+Requires Bun ≥ 1.2, the `gh` CLI, `git`, and a reachable Ollama instance with the two models named
+in `pipeline.config.ts` pulled locally. Run `pipeline doctor` to verify all of this before doing
+anything else.
+
+GitHub API operations can run as a GitHub App bot when this user-level file exists:
+
+```text
+~/.config/finografic/ai-agent-pipeline/.env
+```
+
+Expected keys:
+
+```text
+GITHUB_APP_ID=
+GITHUB_APP_INSTALLATION_ID=
+GITHUB_APP_PRIVATE_KEY_PATH=
+```
+
+When the file is absent, the CLI falls back to the current `gh` authentication.
 
 ## The five commands
 

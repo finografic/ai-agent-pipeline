@@ -21,6 +21,7 @@ import {
 import { claimIssue } from './claim';
 import { findRoutingRule, loadConfig, parseIssueLabels } from './config';
 import { createGithubClient } from './github';
+import { createGithubAppAuthEnvProvider, loadGithubAppAuthConfig } from './github-app-auth';
 import { runR0Gate } from './reviewers/r0-gate';
 import { isR1Pass, runR1Review } from './reviewers/r1-contract';
 import { appendTelemetryRecord, summarizeCosts } from './telemetry';
@@ -77,11 +78,19 @@ function createWorker(name: WorkerName): Worker {
 interface Context {
   config: PipelineConfig;
   github: GithubClient;
+  githubAuthMode: 'app' | 'gh';
 }
 
 async function loadContext(): Promise<Context> {
   const config = await loadConfig();
-  return { config, github: createGithubClient({ repoSlug: config.repo.slug }) };
+  const githubAppConfig = await loadGithubAppAuthConfig();
+  const authEnvProvider =
+    githubAppConfig === undefined ? undefined : createGithubAppAuthEnvProvider({ config: githubAppConfig });
+  return {
+    config,
+    github: createGithubClient({ repoSlug: config.repo.slug, authEnvProvider }),
+    githubAuthMode: githubAppConfig === undefined ? 'gh' : 'app',
+  };
 }
 
 async function telemetry(record: TelemetryRecord): Promise<void> {
@@ -97,15 +106,23 @@ interface DoctorCheck {
 }
 
 async function doctor(): Promise<void> {
-  const { config, github } = await loadContext();
+  const { config, github, githubAuthMode } = await loadContext();
   const checks: DoctorCheck[] = [];
 
-  const ghAuth = await $`gh auth status`.quiet().nothrow();
-  checks.push({
-    name: 'gh CLI authenticated',
-    ok: ghAuth.exitCode === 0,
-    detail: ghAuth.exitCode === 0 ? 'ok' : ghAuth.stderr.toString().trim(),
-  });
+  if (githubAuthMode === 'app') {
+    checks.push({
+      name: 'GitHub App auth configured',
+      ok: true,
+      detail: 'using installation token for GitHub API operations',
+    });
+  } else {
+    const ghAuth = await $`gh auth status`.quiet().nothrow();
+    checks.push({
+      name: 'gh CLI authenticated',
+      ok: ghAuth.exitCode === 0,
+      detail: ghAuth.exitCode === 0 ? 'ok' : ghAuth.stderr.toString().trim(),
+    });
+  }
 
   const gitVersion = await $`git --version`.quiet().nothrow();
   checks.push({
