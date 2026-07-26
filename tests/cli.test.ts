@@ -46,16 +46,20 @@ const failingR1: R1Outcome = {
 
 describe('renderGateComment', () => {
   test('marks passing gates with check icons', () => {
-    expect(renderGateComment(passingR0, passingR1)).toContain('**R0:** ✅ PASS');
-    expect(renderGateComment(passingR0, passingR1)).toContain('**R1:** ✅ PASS');
+    const comment = renderGateComment(passingR0, passingR1);
+
+    expect(comment).toContain('| Gate | Status |');
+    expect(comment).toContain('| R0 | ✅ PASS |');
+    expect(comment).toContain('| R1 | ✅ PASS |');
+    expect(comment).toContain('\n\nconfidence: high');
   });
 
   test('marks failing gates and warnings with visible icons', () => {
     const comment = renderGateComment(failingR0, failingR1);
 
-    expect(comment).toContain('**R0:** ❌ FAIL');
+    expect(comment).toContain('| R0 | ❌ FAIL |');
     expect(comment).toContain('- ❌ requiredChecks: lint failed');
     expect(comment).toContain('- ⚠️ warning — testDelta: assertions decreased (`tests/example.test.ts`)');
-    expect(comment).toContain('**R1:** ❌ FAIL');
+    expect(comment).toContain('| R1 | ❌ FAIL |');
   });
 });

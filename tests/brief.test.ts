@@ -46,10 +46,13 @@ describe('renderDraftPrBody', () => {
     expect(body).toContain('<!-- agent:round=0 -->');
   });
 
-  test('uses an explicit empty-state when the issue body is blank', () => {
-    expect(renderDraftPrBody({ issueNumber: 7, issueBody: '  ', round: 0 })).toContain(
-      '_No issue body provided._',
-    );
+  test('omits the issue body section when the issue body is blank', () => {
+    const body = renderDraftPrBody({ issueNumber: 7, issueBody: '  ', round: 0 });
+
+    expect(body).toContain('## Source Issue\n\nCloses #7');
+    expect(body).not.toContain('## Issue Body');
+    expect(body).not.toContain('_No issue body provided._');
+    expect(body).toContain('<!-- agent:round=0 -->');
   });
 });
 
