@@ -29,7 +29,7 @@ export interface RenderDraftPrBodyParams {
 /** Renders the draft PR body while preserving the hidden round marker used by `gate`. */
 export function renderDraftPrBody(params: RenderDraftPrBodyParams): string {
   const issueBody = params.issueBody.trim();
-  const issueBodyLines = issueBody === '' ? [] : ['', '## Issue Body', '', issueBody];
+  const issueBodyLines = issueBody === '' ? [] : ['', issueBody];
 
   return [
     '## Source Issue',

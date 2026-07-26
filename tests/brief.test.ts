@@ -41,7 +41,8 @@ describe('renderDraftPrBody', () => {
     });
 
     expect(body).toContain('## Source Issue\n\nCloses #42');
-    expect(body).toContain('## Issue Body\n\n## Summary\n\nDo the thing.');
+    expect(body).toContain('Closes #42\n\n## Summary\n\nDo the thing.');
+    expect(body).not.toContain('## Issue Body');
     expect(body).toContain('## Acceptance Criteria\n\n- [ ] Done');
     expect(body).toContain('<!-- agent:round=0 -->');
   });
